@@ -509,8 +509,14 @@ function finalizeTimestamps(name, regionIndex_form, regionIndex_trans) {
     // timestampsContainer.innerHTML = ''; // Clear previous timestamps
 
     const roundedSignificantPoints = newsigPoints.map(point => point.toFixed(2));
-    const timestamps = [0, ...roundedSignificantPoints, audioDuration.toFixed(2)].map(Number);
+    console.log("ROUNDED SIG: ", roundedSignificantPoints);
 
+    // Convert to numbers, add boundaries, and sort
+    const timestamps = [0, ...roundedSignificantPoints, audioDuration.toFixed(2)]
+    .map(Number)
+    .sort((a, b) => a - b);
+
+    console.log("TIMESTAMP: ", timestamps);
     const sectionsCount = newsigPoints.length;
     let container;
     let labels = [];
