@@ -1618,7 +1618,13 @@ function validateInputs(motionInput, strengthInput, index) {
 
 // Updated gatherFormData function
 function gatherFormData() {
-    let roundedSignificantPoints = newsigPoints.map(point => point.toFixed(2));
+    // let roundedSignificantPoints = newsigPoints.map(point => point.toFixed(2));
+    let roundedSignificantPoints = newsigPoints
+        .map(point => point.toFixed(2))
+        .map(Number) // Ensure they are numbers
+        .sort((a, b) => a - b); // Sort in ascending order
+
+    console.log("ROUNDED SIG (sorted): ", roundedSignificantPoints);
 
     // Add the final timestamp if it's not already included
     const finalTimeStamp = audioDuration.toFixed(2);
@@ -1911,6 +1917,7 @@ function buildResultHTML(result) {
 
 function processTable() {
     const formData = gatherFormData();
+    console.log("FORM DATA: ", formData);
     const transitionsData = gatherTransitionData(formData);
     let seed = document.getElementById("seed").value;
     document.getElementById('processedDataContainer').innerHTML = '';

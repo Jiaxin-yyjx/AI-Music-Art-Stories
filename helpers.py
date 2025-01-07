@@ -160,6 +160,8 @@ def get_motion_data(form_data, trans_data, time_intervals, interval_strings, sce
             for start, end in zip(start_times_trans, end_times_trans):
                 
                 if start <= start_time and end > end_time:
+                    print("start")
+                    # there is a transition time starting before current start time and ends after current end_time
                     if start in scene_change_times and end in scene_change_times:
                         print("skipped over")
                         motion_data.append(split_and_pair_values(form_data[str(end)]))
@@ -174,11 +176,22 @@ def get_motion_data(form_data, trans_data, time_intervals, interval_strings, sce
                     break
 
                 elif end_time in end_times_trans:
+                    # transition just completed, now need to find proper start time in form data
                     
                     transition_interval = f"{start:.2f}-{end:.2f}"
-                    print("transition interval internal: ", transition_interval)
+                    print("transition interval end transition: ", transition_interval)
+                    # if end_time != time_intervals[-1]:
+                    #     trans_data_tmp = split_and_pair_values(trans_data[transition_interval])
+                    #     closest_end = get_closest_form_data(end_time, form_data)
+                    #     print("closest_end_transition_end: ", closest_end)
+                    #     form_data_tmp = split_and_pair_values(form_data[str(closest_end)])
+                    #     final_data = trans_data_tmp + form_data_tmp
+                    #     motion_data.append(final_data)
+                    #     print(final_data)
+                    # else:
                     motion_data.append(split_and_pair_values(trans_data[transition_interval]))
                     print(split_and_pair_values(trans_data[transition_interval]))
+                    
                     in_transition = False
                     start_times_trans = start_times_trans[1:]
                     end_times_trans = end_times_trans[1:]
