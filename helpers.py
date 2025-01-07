@@ -133,7 +133,7 @@ def get_motion_data(form_data, trans_data, time_intervals, interval_strings, sce
         #     # motion_data.append(split_and_pair_values())
         #     print("end transition")
 
-        if start_time in time_intervals and end_time in time_intervals and start_time != end_time and in_transition == False:    
+        if start_time in time_intervals and start_time != 0 and end_time in time_intervals and start_time != end_time and in_transition == False:    
             motion_data.append(split_and_pair_values(form_data[str(end_time)]))
             print("SPLIT PAIR: ", split_and_pair_values(form_data[str(end_time)]))
         elif in_transition == True:
