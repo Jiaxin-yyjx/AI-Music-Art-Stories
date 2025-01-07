@@ -509,8 +509,14 @@ function finalizeTimestamps(name, regionIndex_form, regionIndex_trans) {
     // timestampsContainer.innerHTML = ''; // Clear previous timestamps
 
     const roundedSignificantPoints = newsigPoints.map(point => point.toFixed(2));
-    const timestamps = [0, ...roundedSignificantPoints, audioDuration.toFixed(2)].map(Number);
+    console.log("ROUNDED SIG: ", roundedSignificantPoints);
 
+    // Convert to numbers, add boundaries, and sort
+    const timestamps = [0, ...roundedSignificantPoints, audioDuration.toFixed(2)]
+    .map(Number)
+    .sort((a, b) => a - b);
+
+    console.log("TIMESTAMP: ", timestamps);
     const sectionsCount = newsigPoints.length;
     let container;
     let labels = [];
@@ -1612,7 +1618,13 @@ function validateInputs(motionInput, strengthInput, index) {
 
 // Updated gatherFormData function
 function gatherFormData() {
-    let roundedSignificantPoints = newsigPoints.map(point => point.toFixed(2));
+    // let roundedSignificantPoints = newsigPoints.map(point => point.toFixed(2));
+    let roundedSignificantPoints = newsigPoints
+        .map(point => point.toFixed(2))
+        .map(Number) // Ensure they are numbers
+        .sort((a, b) => a - b); // Sort in ascending order
+
+    console.log("ROUNDED SIG (sorted): ", roundedSignificantPoints);
 
     // Add the final timestamp if it's not already included
     const finalTimeStamp = audioDuration.toFixed(2);
@@ -1905,6 +1917,7 @@ function buildResultHTML(result) {
 
 function processTable() {
     const formData = gatherFormData();
+    console.log("FORM DATA: ", formData);
     const transitionsData = gatherTransitionData(formData);
     let seed = document.getElementById("seed").value;
     document.getElementById('processedDataContainer').innerHTML = '';
