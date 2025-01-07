@@ -27,3 +27,12 @@ pip install -r requirements.txt
 ```bash
 python server.py
 ```
+4. Run helper function
+```bash
+python helpers.py
+```
+
+5. Run redis (use for concurrent processing for heroku)
+```bash
+redis
+```
