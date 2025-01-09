@@ -110,6 +110,7 @@ def get_motion_data(form_data, trans_data, time_intervals, interval_strings, sce
             in_transition = True
             closest_end = get_closest_form_data(end_time, form_data)
             closest_end = str(closest_end)
+            closest_end_backup = closest_end
             try:
                 if len(closest_end.split('.')[1]) == 1:
                     closest_end = closest_end + '0'
@@ -118,7 +119,10 @@ def get_motion_data(form_data, trans_data, time_intervals, interval_strings, sce
                 closest_end = closest_end + '.00'
                 print("closest time no decimal: ", closest_end)
 
-            motion_data.append(split_and_pair_values(form_data[str(closest_end)]))
+            try:
+                motion_data.append(split_and_pair_values(form_data[str(closest_end)]))
+            except:
+                motion_data.append(split_and_pair_values(form_data[str(closest_end_backup)]))
             print(split_and_pair_values(form_data[str(closest_end)]))
             continue
             # start_trans_idx = start_times_trans.index(end_time)

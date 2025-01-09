@@ -22,6 +22,7 @@ let updatedOrangeRegions = [];
 let existingTransitionValues = {};
 let existingValues = {};
 let added = true;
+let selectedFile = null;
 
 const vibes = ['calm', 'epic', 'aggressive', 'chill', 'dark', 'energetic', 'ethereal', 'happy', 'romantic', 'sad', 'scary', 'sexy', 'uplifting'];
 const textures = ['painting', 'calligraphy brush ink stroke', 'pastel watercolor on canvas', 'charcoal drawing', 'pencil drawing', 'impasto palette knife painting', 'mosaic', 'jagged/irregular', 'rubbed graphite on paper', 'digital glitch', 'splattered paint', 'graffiti', 'ink blots'];
@@ -404,7 +405,7 @@ function show_transitions() {
     nextButton.style.display = "none";
 }
 
-function show_default_boxes() {
+function show_default_boxes(vibeInputVal = "", colorInputVal = "", imageryInputVal = "", textureInputVal = "") {
     //show items in input details and image gallery
     const finalizeButton = document.getElementById("finalize-timestamps");
     const detailsBox = document.getElementById("detailsBox")
@@ -412,8 +413,13 @@ function show_default_boxes() {
     const colorBox = document.getElementById("colorBox")
     const imageryBox = document.getElementById("imageryBox")
     const textureBox = document.getElementById("textureBox")
+    const vibeInput = document.getElementById("vibeInput");
+    const colorInput = document.getElementById("colorInput");
+    const imageryInput = document.getElementById("imageryInput");
+    const textureInput = document.getElementById("textureInput");
     const image_examples = document.getElementById("image_examples")
     const detail_gallery_toggle = document.getElementById("dropdownToggle")
+    console.log("IN SHOW DEFAULT BOXES: ", vibeInputVal, colorInputVal, imageryInputVal, textureInputVal)
 
 
     const fillDefaultsButton = document.getElementById("fill-defaults")
@@ -456,7 +462,11 @@ function show_default_boxes() {
 
     // Update color picker whenever color input changes
     colorInput.addEventListener("input", updateColorPickerFromInput);
-
+    // console.log("DEFAULT BOX INPUT: ", vibeInput, colorInput, imageryInput,)
+    vibeInput.value = vibeInputVal;
+    colorInput.value = colorInputVal;
+    imageryInput.value = imageryInputVal;
+    textureInput.value = textureInputVal;
 
     // Add default transition options
     let allRegions = Object.values(waveform.regions.list);
@@ -504,7 +514,7 @@ function makeTimestamp(isTrans) {
 }
 
 
-function finalizeTimestamps(name, regionIndex_form, regionIndex_trans) {
+function finalizeTimestamps(name, regionIndex_form, regionIndex_trans, transitionData = {}) {
     // const timestampsContainer = document.getElementById('timestampsContainer');
     // timestampsContainer.innerHTML = ''; // Clear previous timestamps
 
@@ -850,6 +860,7 @@ function finalizeTimestamps(name, regionIndex_form, regionIndex_trans) {
             existingTransitionValues[regionIndex_trans] = ['', ''];
             // console.log("existingTransitionValues after: ", existingTransitionValues);
         } else if (regionIndex_trans < 0) {
+            
             const trans_idx = Object.keys(existingTransitionValues).length + regionIndex_trans;
             delete existingTransitionValues[trans_idx];
             existingTransitionValues = Object.keys(existingTransitionValues)
@@ -867,11 +878,12 @@ function finalizeTimestamps(name, regionIndex_form, regionIndex_trans) {
         // Now, use the sorted timestamps to add transitions
         sortedRegions.forEach((region, index) => {
             const transitionStart = region.startTime;
+            console
             const transitionEnd = region.endTime;
 
-            // console.log("existing transition main low ")
-            // console.log( existingTransitionValues)
-            addTransitions(index, transitionStart, transitionEnd, Math.abs(Object.keys(existingTransitionValues).length - 1 - index), existingTransitionValues, regionIndex_trans);
+            console.log("existing transition main low: ", transitionStart, transitionEnd);
+            console.log(existingTransitionValues)
+            addTransitions(index, transitionStart, transitionEnd, Math.abs(Object.keys(existingTransitionValues).length - 1 - index), existingTransitionValues, regionIndex_trans, transitionData);
 
         });
 
@@ -911,95 +923,6 @@ function finalizeTimestamps(name, regionIndex_form, regionIndex_trans) {
 
     tablemade = true;
 }
-
-// function deleteSection() {
-//     const deleteButton = document.getElementById('delete-section');
-//     let deleteMode = false;
-
-//     deleteButton.addEventListener('click', () => {
-//         deleteMode = !deleteMode;
-//         // console.log(deleteMode);
-//         deleteButton.innerText = deleteMode ? 'Exit Delete Mode' : 'Delete Section';
-
-//         if (deleteMode) {
-//             // console.log('Delete Mode');
-//             document.querySelectorAll('.section').forEach(section => {
-//                 // Highlight sections for deletion
-//                 section.style.border = '2px dashed red';
-
-//                 // Add click event listener for deletion
-//                 section.addEventListener('click', handleSectionDeletion);
-//             });
-//         } else {
-//             // Exit delete mode and remove highlights
-//             // console.log("not delete mode?");
-//             document.querySelectorAll('.section').forEach(section => {
-//                 section.style.border = ''; // Remove the highlight
-//                 section.removeEventListener('click', handleSectionDeletion); // Remove event listener to avoid issues
-//             });
-//         }
-//     });
-
-//     function handleSectionDeletion(event) {
-//         if (deleteMode) {
-//             const section = event.currentTarget;
-
-//             // Confirm deletion with the user
-//             const confirmed = confirm('Are you sure you want to delete this section?');
-//             if (confirmed) {
-//                 // Remove the section from the DOM
-//                 section.remove();
-//             }
-//         }
-//     }
-// }
-
-
-// function addTransitions(startTime, endTime) {
-//     console.log("ADD TTRANSITION CALLED");
-//     const formContainers = document.querySelectorAll('.section');
-
-//     formContainers.forEach((form, index) => {
-//         const formStartTime = parseFloat(form.querySelector('.time-range').innerText.split('-')[0]);
-//         const formEndTime = parseFloat(form.querySelector('.time-range').innerText.split('-')[1]);
-
-//         if (startTime >= formStartTime && startTime < formEndTime) {
-//             // Create the transition container
-//             const transitionContainer = document.createElement('div');
-//             transitionContainer.className = 'section transition-section';
-//             transitionContainer.innerHTML = `
-//                 <div class="time-range">Transition (${startTime}s to ${endTime}s)</div>
-//                 <div class="input-container">
-//                     <label for="motion_trans_${startTime}_${endTime}">Motion:</label>
-//                     <input type="text" id="motion_trans_${startTime}_${endTime}">
-//                     <label for="strength_trans_${startTime}_${endTime}">Strength:</label>
-//                     <input type="text" id="strength_trans_${startTime}_${endTime}">
-//                     <label for="speed_trans_${startTime}_${endTime}">Speed:</label>
-//                     <input type="text" id="speed_trans_${startTime}_${endTime}">
-//                 </div>
-//             `;
-
-//             // Add the play button to preview the transition
-//             const playButton = document.createElement('button');
-//             playButton.innerText = 'Banana3';
-//             playButton.addEventListener('click', () => playTimeRange(startTime, endTime));
-//             transitionContainer.appendChild(playButton);
-
-//             // Add the delete button to remove the transition
-//             const deleteButton = document.createElement('button');
-//             deleteButton.innerText = 'Delete';
-//             deleteButton.style.marginLeft = '10px';
-//             deleteButton.addEventListener('click', () => {
-//                 transitionContainer.remove();
-//             });
-//             transitionContainer.appendChild(deleteButton);
-
-//             // Insert the transition container in the appropriate position
-//             form.insertAdjacentElement('afterend', transitionContainer);
-//         }
-//     });
-// } 
-
 
 
 //WORKING
@@ -1178,7 +1101,8 @@ let existingTransitions = []; // Track all transitions globally
 //     });
 // }
 
-function addTransitions(id, startTime, endTime, i, existingTransitionValues, regionIndex) {
+function addTransitions(id, startTime, endTime, i, existingTransitionValues, regionIndex, transitionData = {}) {
+    console.log("existing transitions IN ADD TRANSITION: ", existingTransitionValues)
     // console.log("AddTrans2 called");
     const formContainers = document.querySelectorAll('.section');
     // console.log("formcontainer: ", formContainers)
@@ -1316,23 +1240,42 @@ function addTransitions(id, startTime, endTime, i, existingTransitionValues, reg
 
                 if (tablemade && Object.keys(existingTransitionValues).length > 0) {
                     // console.log("enter loop: ", Object.keys(existingTransitionValues));
+                    // console.log("check for transitionData inside: ", transitionData);
+                    if (transitionData) {
+                        console.log("enter transitiondata")
+                        // existingTransitionValues = data
+                        index = 0;
+                        // let tmpDict = {}
+                        const transitionKeys = Object.keys(transitionData).reverse(); // Reverse the keys
+                        for (const interval of transitionKeys) {
+                            // console.log("transitionData: ", transitionData)
+                            // console.log("transitionData val: ", transitionData[interval])
+                            console.log("INTERVAL:", interval);
+                            if (transitionData.hasOwnProperty(interval)) {
+                                const item = transitionData[interval];
+                                console.log("index, ITEM:", index, item['motion'],item['strength']);
+                                existingTransitionValues[index] = [
+                                    item['motion'],
+                                    item['strength']
+                                ];
+                                console.log("Added to existing trans vals:", existingTransitionValues);
+                                index++;
+                            }
+                        }
+                    }
+                    // existingTransitionValues = {0: ["jump", "up"], 1: ["die", "down"]}
                     if (existingTransitionValues[id] && existingTransitionValues[id][inputTypes.indexOf(type)]) {
                         input.value = existingTransitionValues[id][inputTypes.indexOf(type)];
 
                     }
                 }
 
-
-
-
-
-
             });
         }
     });
 }
 
-function fillDefaultsTemp() {
+function fillDefaultsTemp(load = false) {
     const vibeInput = document.getElementById("vibeInput");
     const colorInput = document.getElementById("colorInput");
     const imageryInput = document.getElementById("imageryInput");
@@ -1356,7 +1299,13 @@ function fillDefaultsTemp() {
     const toggleButton = document.getElementById("toggleMotionButton");
     toggleButton.style.display = "block";
     trash.style.display = "flex";
-    fillDefaults();
+    if(load == true){
+        console.log("DON'T FILL DEFAULTS");
+    }else{
+        console.log("FILL DEFAULTS")
+        fillDefaults();
+    }
+    
     processButton.style.display = "block";
     seed.style.display = "inline-block";
 }
@@ -1579,8 +1528,8 @@ function fillDefaults() {
 
 // Validation Function
 function validateInputs(motionInput, strengthInput, index) {
-    console.log("motion values: ", motionInput)
-    console.log("strengthValues", strengthInput)
+    // console.log("motion values: ", motionInput)
+    // console.log("strengthValues", strengthInput)
     // Split inputs by comma
     const motionValues = motionInput.split(",").map(item => item.trim());
     const strengthValues = strengthInput.split(",").map(item => item.trim());
@@ -1602,7 +1551,7 @@ function validateInputs(motionInput, strengthInput, index) {
         // Check if value is not a valid strength or a valid mathematical function or integer
         const isInteger = /^-?\d+$/.test(value); // Matches positive or negative integers
         const isValidFunction = /^-?(\d+(\.\d+)?(\*\d+(\.\d+)?)*)?\*?(sin|cos|tan)\((-?\d+(\.\d+)?(\*\d+(\.\d+)?)*)?\*?t\/\d+(\.\d+)?\)$/.test(value); // Matches functions like 10*sin(2*t/5)
-        console.log(!strengths.includes(value), !isInteger, !isValidFunction)
+        // console.log(!strengths.includes(value), !isInteger, !isValidFunction)
         return !strengths.includes(value) && !isInteger && !isValidFunction;
     });
 
@@ -2078,7 +2027,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const audioFileInput = document.getElementById('audioFile');
     console.log("file: " + audioFileInput)
     let fileSelected = false;
-    let selectedFile = null;
+    selectedFile = null;
     
     function validateApiKey() {
         // Get the value of the API key field
@@ -2427,6 +2376,8 @@ function processAudio() {
     const play_buttons_box = document.getElementById("playbuttons");
     // const slider = document.getElementById("slider")
     const loadingIndicator = document.getElementById("loadingIndicator");
+    const loadState = document.getElementById("loadState");
+    const saveState = document.getElementById("saveState");
     audioZoom(); // Function to set all the zooom stuff up
 
 
@@ -2435,6 +2386,8 @@ function processAudio() {
     play_start_button.style.display = "block";
     play_buttons_box.style.display = "flex"
     loadingIndicator.style.display = "block";
+    loadState.style.display = "block";
+    saveState.style.display = "block";
 
     // const clearButton = document.getElementById('clearButton');
 
@@ -3674,7 +3627,13 @@ function delete_transitions() {
 // }
 
 
-function refreshTable(new_type) {
+function refreshTable(new_type, transitionData = {}) {
+    console.log("refreshTable existingTransitionValues: ", existingTransitionValues)
+    if(new_type == "load"){
+        console.log("refreshTable existingTransitionValues 0.5: ", existingTransitionValues)
+        // finalizeTimestamps("transition", -1, -1);
+        return
+    }
     if (tablemade) {
 
         const allRegions = Object.values(waveform.regions.list);
@@ -3686,6 +3645,8 @@ function refreshTable(new_type) {
         console.log("NEW SIG: ", newsigPoints);
         let newRegionIndex_trans = 't';
         let newRegionIndex_form = 'f';
+        console.log("refreshTable existingTransitionValues 2: ", existingTransitionValues)
+
 
         if (new_type === "trans") {
             console.log("Transition")
@@ -3704,10 +3665,12 @@ function refreshTable(new_type) {
             newRegionIndex_form = handleRegionChanges(greenRegions, updatedGreenRegions, existingValues, "form");
             updatedGreenRegions = greenRegions;
         }
+        console.log("refreshTable existingTransitionValues 3: ", existingTransitionValues)
+
 
 
         const audioDuration = waveform.getDuration();
-        finalizeTimestamps("time", newRegionIndex_form, newRegionIndex_trans);
+        finalizeTimestamps("time", newRegionIndex_form, newRegionIndex_trans, transitionData);
     }
 }
 
@@ -3859,41 +3822,6 @@ function showSignificantPoints() {
     });
 }
 
-
-
-
-
-// function getLyrics() {
-//     const fileInput = document.getElementById('audioFile');
-//     if (fileInput.files.length === 0) {
-//         alert("Please select an audio file first.");
-//         return;
-//     }
-
-//     const formData = new FormData();
-//     formData.append('audioFile', fileInput.files[0]);
-
-//     fetch('/upload_audio', {
-//         method: 'POST',
-//         body: formData
-//     })
-//         .then(response => response.json())
-//         .then(data => {
-//             if (data.success) {
-//                 document.getElementById('outputContainer').textContent = JSON.stringify(data.output, null, 2);
-//                 lowEnergyBeats = data.low_energy_timestamps; // Update the global variable
-//                 // console.log("LOW ENERGY: " + lowEnergyBeats); // Log for debugging
-//                 updateUIWithLowEnergyBeats(); // Example function call
-//             } else {
-//                 document.getElementById('outputContainer').textContent = 'Error: ' + data.error;
-//             }
-//         })
-//         .catch(error => {
-//             console.error('Error:', error);
-//             document.getElementById('outputContainer').textContent = 'Failed to fetch data.';
-//         });
-// }
-
 function toggleMotion() {
     const button = document.getElementById("toggleMotionButton");
     if (button.textContent === "3D Motion") {
@@ -3912,4 +3840,272 @@ function toggleMotion() {
 function toggle_suggest() {
     const suggestionsContent = document.getElementById('suggestionsContent');
     suggestionsContent.classList.toggle('hidden');
+}
+
+// Functions to save and load JSON files
+
+function getwaveformData(){
+    let allRegions = Object.values(waveform.regions.list);
+    let orangeRegions = allRegions.filter(region => region.color === 'rgba(255, 165, 0, 0.5)');
+    // Extract start and end times
+    let orangeIntervals = orangeRegions.map(region => ({
+        start: parseFloat(region.start.toFixed(2)), // Round to 2 decimal places
+        end: parseFloat(region.end.toFixed(2))     // Round to 2 decimal places
+    }));
+
+    
+    let greenRegions = allRegions.filter(region => region.color === 'green').sort((a, b) => a.start - b.start);
+    greenIntervals = greenRegions.map(r => r.start);
+    
+    return {"form": greenIntervals, "trans": orangeIntervals};    
+
+}
+
+function gettableData(){
+    const formData = gatherFormData();
+    const transitionsData = gatherTransitionData(formData);
+    return {"form" : formData, "trans": transitionsData};
+}
+
+function saveState() {
+    // Gather data
+    let waveData = getwaveformData();
+    let tableData = gettableData();
+    const vibeInput = document.getElementById("vibeInput").value;
+    const colorInput = document.getElementById("colorInput").value;
+    const imageryInput = document.getElementById("imageryInput").value;
+    const textureInput = document.getElementById("textureInput").value;
+    console.log("SAVE STATE METADATA: ", selectedFile.name, vibeInput, textureInput, colorInput, imageryInput)
+    const state = {
+        intervalTimes: waveData.form,
+        transitionTimes: waveData.trans,      
+        formData: tableData.form,
+        transitionData: tableData.trans,
+        fileName: selectedFile.name,
+        vibeInput: vibeInput,
+        colorInput: colorInput,
+        imageryInput: imageryInput,
+        textureInput: textureInput
+    };
+    console.log("State: ", state)
+
+    // Create a downloadable JSON file
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    // Create a temporary download link
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'waveform_table_state.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Clean up the object URL
+    URL.revokeObjectURL(url);
+}
+
+function promptAndLoadState() {
+    // Create a file input element
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'application/json';
+
+    fileInput.onchange = event => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+
+            // Read the file content
+            reader.onload = e => {
+                try {
+                    const jsonData = JSON.parse(e.target.result);
+
+                    // Validate JSON structure
+                    if (validateJsonState(jsonData)) {
+                        console.log("json data: ", jsonData);
+                        loadState(jsonData); // Load the state if validation passes
+                        alert(`Waveform state loaded successfully for ${jsonData.fileName}!`);
+                        if (jsonData.fileName != selectedFile.name){
+                            alert(`Song and json file name mismatch. Uploaded song: ${selectedFile.name}. Json data: ${jsonData.fileName}!`);
+                        }
+                    } else {
+                        alert("Invalid JSON file. Please upload a valid state file.");
+                    }
+                } catch (error) {
+                    alert("Failed to parse JSON. Please upload a valid JSON file.");
+                    console.error("Error parsing JSON:", error);
+                }
+            };
+
+            reader.readAsText(file);
+        }
+    };
+
+    // Trigger file input click
+    fileInput.click();
+}
+
+function validateJsonState(jsonData) {
+    // Ensure the JSON contains valid keys with expected structures
+    const hasIntervalTimes = Array.isArray(jsonData.intervalTimes);
+    const hasTransitionTimes = Array.isArray(jsonData.transitionTimes);
+
+    const validIntervals = hasIntervalTimes 
+        ? jsonData.intervalTimes.every(interval => 
+            typeof interval.start === 'number' && typeof interval.end === 'number'
+        )
+        : false;
+
+    const validTransitions = hasTransitionTimes 
+        ? jsonData.transitionTimes.every(transition => 
+            typeof transition.start === 'number' && typeof transition.end === 'number'
+        )
+        : false;
+
+    return validIntervals || validTransitions; // At least one of them must be valid
+}
+
+function clearColorRegions(waveform, colorsToRemove) {
+    if (!waveform || !waveform.regions) return;
+
+    Object.keys(waveform.regions.list).forEach(regionId => {
+        const region = waveform.regions.list[regionId];
+
+        // Check if the region's color matches one of the colors to remove
+        if (colorsToRemove.includes(region.color)) {
+            region.remove(); // Remove the region
+        }
+    });
+}
+
+
+function loadState(jsonData) {
+    const { intervalTimes, transitionTimes , formData, transitionData} = jsonData;
+    console.log("form and transdata: ", formData);
+    initializeWaveform(intervalTimes, transitionTimes)
+    if (formData || transitionData) {
+        console.log("enter table init section")
+        initializeTable(jsonData);
+    }
+
+    console.log("Waveform reinitialized with saved state.");
+}
+
+
+// Mock functions for reinitializing waveform and table
+function initializeWaveform(intervalTimes, transitionTimes) {
+    const waveformContainer = document.getElementById('waveform');
+    newsigPoints = intervalTimes;
+    tablemade = false;
+    if (!waveform || waveformContainer.style.display === 'none') {
+        // Create a new WaveSurfer instance if one doesn't exist
+        waveform = WaveSurfer.create({
+            container: '#waveform',
+            height: 256,
+            waveColor: 'rgb(200, 0, 200)',
+            progressColor: 'rgb(100, 0, 100)',
+            plugins: [
+                WaveSurfer.regions.create() // Initialize the Regions plugin
+            ],
+        });
+    } else {
+        // Clear existing regions if a waveform already exists
+        // waveform.clearRegions();
+        const greenColor = 'green';
+        const orangeColor = 'rgba(255, 165, 0, 0.5)';
+
+        // Clear existing green and orange regions
+        clearColorRegions(waveform, [greenColor, orangeColor]);
+        
+    }
+
+    
+    // Add regions for intervalTimes (green regions)
+    if (intervalTimes) {
+        setupRegions(waveform, intervalTimes, 'Significant Points', 'green', 0.25, true);
+
+    }
+
+    // Add regions for transitionTimes (orange regions)
+    if (transitionTimes) {
+        transitionTimes.forEach(transition => {
+            waveform.addRegion({
+                start: transition.start,
+                end: transition.end,
+                color: 'rgba(255, 165, 0, 0.5)', // Orange
+                drag: true,
+                resize: true
+            });
+        });
+    }
+}
+
+function initializeTable(jsonData) {
+    const { intervalTimes, transitionTimes , formData, transitionData, songname, vibeInput, colorInput, imageryInput, textureInput} = jsonData;
+    console.log('Initializing table with data:', formData, transitionData);
+    console.log("initialize table metadata: ", songname, vibeInput, colorInput, imageryInput, textureInput)
+    // essentially do the reverse of clearExistingData + reinitialize all data structs
+    
+    
+
+    // refreshTable();
+    show_transitions();
+    show_default_boxes(vibeInput, colorInput, imageryInput, textureInput); 
+    show_brainstorming();
+
+    refreshTable("form");
+    refreshTable("trans");
+    fillDefaultsTemp(true);
+    existingValues = {};
+    existingTransitionValues = {};
+
+    // Process formData
+    let index = 0;
+    for (const time in formData) {
+        console.log("time: ", time)
+        if (formData.hasOwnProperty(time)) {
+            const item = formData[time];
+            existingValues[index] = [
+                item.vibe,
+                item.imagery,
+                item.texture,
+                item.style,
+                item.color,
+                item.motion,
+                item.strength
+            ];
+            index++;
+        }
+    }
+
+    // Process transitionData
+    // index = 0;
+    // // let tmpDict = {}
+    // const transitionKeys = Object.keys(transitionData).reverse(); // Reverse the keys
+    // for (const interval of transitionKeys) {
+    //     // console.log("transitionData: ", transitionData)
+    //     // console.log("transitionData val: ", transitionData[interval])
+    //     console.log("INTERVAL:", interval);
+    //     if (transitionData.hasOwnProperty(interval)) {
+    //         const item = transitionData[interval];
+    //         console.log("index, ITEM:", index, item['motion'],item['strength']);
+    //         existingTransitionValues[index] = [
+    //             item['motion'],
+    //             item['strength']
+    //         ];
+    //         console.log("Added to existing trans vals:", existingTransitionValues);
+    //         index++;
+    //     }
+    // }
+    // // existingTransitionValues = tmpDict;
+    // console.log("existingValues after load: ", existingValues)
+    // console.log("existingTransValues after load: ", existingTransitionValues)
+    // // refreshTable("load");
+    // console.log("transition data sent in: ", transitionData);
+    refreshTable("none", transitionData);
+    // refreshTable("trans");
+
+   
+
 }

@@ -25,7 +25,7 @@ pip install -r requirements.txt
 
 3. Run the Application
 ```bash
-python server.py
+python app.py
 ```
 4. Run helper function
 ```bash
@@ -36,3 +36,6 @@ python helpers.py
 ```bash
 redis
 ```
+You may need to install redis on your computer if you haven't already. If you run into issues, check redis_config.py to ensure localhost url is set correctly and run redis-cli to check (in browser) if workers are being queued and run as expected.
+
+Follow these instructions: https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/
