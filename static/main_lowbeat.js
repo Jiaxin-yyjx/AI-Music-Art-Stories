@@ -4026,19 +4026,26 @@ function initializeWaveform(intervalTimes, transitionTimes) {
         setupRegions(waveform, intervalTimes, 'Significant Points', 'green', 0.25, true);
 
     }
+    
 
     // Add regions for transitionTimes (orange regions)
     if (transitionTimes) {
         transitionTimes.forEach(transition => {
-            waveform.addRegion({
+            const reg = waveform.addRegion({
                 start: transition.start,
                 end: transition.end,
                 color: 'rgba(255, 165, 0, 0.5)', // Orange
                 drag: true,
                 resize: true
             });
+            reg.on('update-end', () => refreshTable("trans"));
+            reg.on('remove', () => refreshTable("trans"));
+            console.log("add transition region len idx: ", Object.keys(existingTransitionValues).length)
+            // addTransitions(Object.keys(existingTransitionValues).length, regionStart, regionEnd, Object.keys(existingTransitionValues).length, existingTransitionValues);
+            refreshTable("trans");
         });
     }
+
 }
 
 function initializeTable(jsonData) {
