@@ -531,7 +531,7 @@ function finalizeTimestamps(name, regionIndex_form, regionIndex_trans, transitio
     let container;
     let labels = [];
 
-    if (name === 'time') {
+    if (name === 'time' || name == "2D" || name == "3D") {
         container = document.getElementById('trash');
         container.style.border = "2px solid black";
         labels = ['Vibe', 'Imagery', 'Texture', 'Style', 'Color', 'Motion', 'Strength']
@@ -619,7 +619,7 @@ function finalizeTimestamps(name, regionIndex_form, regionIndex_trans, transitio
 
 
 
-
+    
     container.innerHTML = ''; // Clear previous content
     container.style.setProperty('--sections-count', sectionsCount);
 
@@ -881,9 +881,9 @@ function finalizeTimestamps(name, regionIndex_form, regionIndex_trans, transitio
             console
             const transitionEnd = region.endTime;
 
-            console.log("existing transition main low: ", transitionStart, transitionEnd);
-            console.log(existingTransitionValues)
-            addTransitions(index, transitionStart, transitionEnd, Math.abs(Object.keys(existingTransitionValues).length - 1 - index), existingTransitionValues, regionIndex_trans, transitionData);
+            console.log("existing transition main low: ", transitionStart, transitionEnd, name);
+            // console.log(existingTransitionValues)
+            addTransitions(index, transitionStart, transitionEnd, Math.abs(Object.keys(existingTransitionValues).length - 1 - index), existingTransitionValues, regionIndex_trans, transitionData, name);
 
         });
 
@@ -1101,11 +1101,44 @@ let existingTransitions = []; // Track all transitions globally
 //     });
 // }
 
-function addTransitions(id, startTime, endTime, i, existingTransitionValues, regionIndex, transitionData = {}) {
-    console.log("existing transitions IN ADD TRANSITION: ", existingTransitionValues)
+function addTransitions(id, startTime, endTime, i, existingTransitionValues, regionIndex, transitionData = {}, name = "") {
+    console.log("existing transitions IN ADD TRANSITION: ", existingTransitionValues, name)
     // console.log("AddTrans2 called");
     const formContainers = document.querySelectorAll('.section');
     // console.log("formcontainer: ", formContainers)
+    if (name == "2D"){
+        console.log("enter addTransition for 2D motion toggle")
+        // Update the first item in each sub-array of existingTransitionValues
+        Object.keys(existingTransitionValues).forEach(key => {
+            const transitionArray = existingTransitionValues[key];
+            if (transitionArray && transitionArray.length >= 1) {
+                const value = transitionArray[0];
+                // console.log("toggle val trans: ", value);
+                if (value.startsWith("rotate_c")) {
+                    transitionArray[0] = value.replace("rotate_c", "spin_c");
+                } else if (value.startsWith("rotate")) {
+                    transitionArray[0] = value.replace("rotate", "pan");
+                }
+            }
+        });
+        // console.log("after change, exist trans in add trans: ", existingTransitionValues)
+    }else if (name == "3D"){
+        console.log("enter addTransition for 3D motion toggle")
+        // Update the first item in each sub-array of existingTransitionValues
+        Object.keys(existingTransitionValues).forEach(key => {
+            const transitionArray = existingTransitionValues[key];
+            if (transitionArray && transitionArray.length >= 1) {
+                const value = transitionArray[0];
+                // console.log("toggle val trans: ", value);
+                if (value.startsWith("spin")) {
+                    transitionArray[0] = value.replace("spin", "rotate");
+                } else if (value.startsWith("pan")) {
+                    transitionArray[0] = value.replace("pan", "rotate");
+                } 
+            }
+        });
+        // console.log("after change, exist trans in add trans: ", existingTransitionValues)
+    }
 
     formContainers.forEach((form) => {
         const formStartTime = parseFloat(form.querySelector('.time-range').innerText.split('-')[0]);
@@ -1238,9 +1271,12 @@ function addTransitions(id, startTime, endTime, i, existingTransitionValues, reg
                     // console.log("Blur: ", existingTransitionValues);
                 });
 
+                if (name == "2D"){
+                    console.log("for name 2D check if conditions met: ", tablemade, Object.keys(existingTransitionValues).length)
+                }
                 if (tablemade && Object.keys(existingTransitionValues).length > 0) {
                     // console.log("enter loop: ", Object.keys(existingTransitionValues));
-                    // console.log("check for transitionData inside: ", transitionData);
+                    // console.log("check for transitionData inside: ", transitionData);                    
                     if (transitionData) {
                         console.log("enter transitiondata")
                         // existingTransitionValues = data
@@ -1791,9 +1827,13 @@ function checkJobStatus(jobId) {
             }
             else if (statusData.status === 'failed') {
                 // If the job has failed, stop polling and display an error
+                // loadingIndicator.style.display = 'none';
+                // console.error("Job failed:", statusData.error || "Unknown error");
+                // alert(`Job failed: ${statusData.error || "An unknown error occurred"}`);
+                // clearInterval(interval); // Stop polling
                 loadingIndicator.style.display = 'none';
-                console.error("Job failed:", statusData.error || "Unknown error");
-                alert(`Job failed: ${statusData.error || "An unknown error occurred"}`);
+                console.error("Job failed:", statusData.error);
+                alert(`Job failed: ${statusData.error}`);
                 clearInterval(interval); // Stop polling
             }
         })
@@ -1865,6 +1905,44 @@ function buildResultHTML(result) {
 }
 
 function processTable() {
+
+    const orangeRegions = [];
+    Object.values(waveform.regions.list).forEach((region) => {
+        if (region.color === 'rgba(255, 165, 0, 0.5)') { // Identify orange regions
+            orangeRegions.push({ start: region.start, end: region.end });
+        }
+    });
+
+    // Sort regions by start time to simplify overlap checks
+    orangeRegions.sort((a, b) => a.start - b.start);
+
+    const overlappingIntervals = [];
+    for (let i = 0; i < orangeRegions.length - 1; i++) {
+        const current = orangeRegions[i];
+        const next = orangeRegions[i + 1];
+
+        if (current.end > next.start) {
+            // Add overlapping intervals to the list
+            overlappingIntervals.push({
+                currentStart: current.start.toFixed(2),
+                currentEnd: current.end.toFixed(2),
+                nextStart: next.start.toFixed(2),
+                nextEnd: next.end.toFixed(2),
+            });
+        }
+    }
+
+    if (overlappingIntervals.length > 0) {
+        // Format overlapping intervals for alert
+        const overlappingMessage = overlappingIntervals.map(interval => 
+            `Overlap detected between [${interval.currentStart}, ${interval.currentEnd}] and [${interval.nextStart}, ${interval.nextEnd}]`
+        ).join('\n');
+
+        alert(`Overlapping orange regions detected. Please adjust them before proceeding:\n${overlappingMessage}`);
+        console.log("Overlapping intervals:", overlappingIntervals);
+        return; // Stop execution if overlaps are found
+    }
+
     const formData = gatherFormData();
     console.log("FORM DATA: ", formData);
     const transitionsData = gatherTransitionData(formData);
@@ -1918,37 +1996,7 @@ function processTable() {
             // Call the function to check the job status
             checkJobStatus(jobId);
             console.log("done checking job status");
-            // console.log("returned back");
-            // for (const [key, value] of Object.entries(data)) {
-            //     // console.log(`${key}: ${value}`);
-            //     if (key === 'output') {
-            //         // console.log(value);
-            //         window.open(value, '_blank');
-            //     }
-            // }
-            // let resultHTML = '';
-
-            // // if (data.animation_prompts) {
-            // //     resultHTML += `<h3>Animation Prompts:</h3><p>${data.animation_prompts}</p>`;
-            // // }
-
-            // if (data.motion_prompts) {
-            //     resultHTML += `<h3>Motion Strings:</h3>`;
-            //     for (const [motion, transitions] of Object.entries(data.motion_prompts)) {
-            //         resultHTML += `<p>${motion}: ${transitions.join(', ')}</p>`;
-            //     }
-            // }
-
-            // if (data.prompts) {
-            //     resultHTML += `<h3>Prompts:</h3><p>${data.prompts}</p>`;
-            // }
-
-            // if (data.output) {
-            //     resultHTML += `<h3>Output:</h3><p><a href="${data.output}" target="_blank">Click here to view the output</a></p>`;
-            // }
-
-            // document.getElementById('processedDataContainer').innerHTML = resultHTML;
-            // document.getElementById('processedDataContainer').style = "border: 2px solid black;"
+            
         })
         .catch(error => {
             console.error('Error:', error);
@@ -3402,10 +3450,62 @@ function delete_intervals() {
     }
 }
 
+// function addDefaultTransitions() {
+//     const allRegions = Object.values(waveform.regions.list);
+//     const greenRegions = allRegions.filter(region => region.color === 'green');
+//     let transitionRegions = [];
+
+//     // Create 1 sec transition around interval start time
+//     greenRegions.forEach(region => {
+//         const startTime = region.start;
+
+//         const transitionStart = Math.max(0, startTime - 0.5); // Ensure start time is not negative
+//         const transitionEnd = startTime + 0.5;
+
+//         transitionRegions.push({ start: transitionStart, end: transitionEnd });
+//     });
+
+//     transitionRegions.sort((a, b) => a.start - b.start);
+//     const waveformDuration = waveform.getDuration();
+
+//     if (transitionRegions.length > 0) {
+//         const lastTransitionEnd = transitionRegions[transitionRegions.length - 1].end;
+
+//         // Check for overlap
+//         if (lastTransitionEnd >= waveformDuration - 1.5) {
+//             // Align final transition
+//             transitionRegions.push({ start: lastTransitionEnd, end: waveformDuration });
+//         } else {
+//             // Final transition of 2 seconds capped at the waveform's duration
+//             const finalStart = waveformDuration - 1.5;
+//             transitionRegions.push({ start: finalStart, end: waveformDuration });
+//         }
+//     } else {
+//         // If no transitions, add a final transition from 2 seconds before the end
+//         transitionRegions.push({ start: waveformDuration - 1.5, end: waveformDuration });
+//     }
+
+//     // add the regions to the waveform
+//     transitionRegions.forEach(region => {
+//         const reg = waveform.addRegion({
+//             start: region.start,
+//             end: region.end,
+//             color: 'rgba(255, 165, 0, 0.5)',
+//             drag: true,
+//             resize: true,
+//         });
+//         reg.on('update-end', () => refreshTable("none"));
+//         reg.on('remove', () => refreshTable("none"));
+//     });
+
+
+//     console.log("Added transitions:", transitionRegions);
+// }
 function addDefaultTransitions() {
     const allRegions = Object.values(waveform.regions.list);
     const greenRegions = allRegions.filter(region => region.color === 'green');
     let transitionRegions = [];
+    let overlapDetected = false;
 
     // Create 1 sec transition around interval start time
     greenRegions.forEach(region => {
@@ -3417,13 +3517,15 @@ function addDefaultTransitions() {
         transitionRegions.push({ start: transitionStart, end: transitionEnd });
     });
 
+    // Sort regions by start time for easier overlap resolution
     transitionRegions.sort((a, b) => a.start - b.start);
+
     const waveformDuration = waveform.getDuration();
 
     if (transitionRegions.length > 0) {
         const lastTransitionEnd = transitionRegions[transitionRegions.length - 1].end;
 
-        // Check for overlap
+        // Check for overlap with waveform duration
         if (lastTransitionEnd >= waveformDuration - 1.5) {
             // Align final transition
             transitionRegions.push({ start: lastTransitionEnd, end: waveformDuration });
@@ -3437,7 +3539,31 @@ function addDefaultTransitions() {
         transitionRegions.push({ start: waveformDuration - 1.5, end: waveformDuration });
     }
 
-    // add the regions to the waveform
+    // Resolve overlaps by shifting overlapping regions
+    for (let i = 0; i < transitionRegions.length - 1; i++) {
+        const current = transitionRegions[i];
+        const next = transitionRegions[i + 1];
+        
+
+        // If there's an overlap, shift the next region's start and end by 0.01
+        if (current.end > next.start) {
+            overlapDetected = true;
+            const shiftAmount = 0.01;
+            const overlap = current.end - next.start + shiftAmount;
+
+            next.start += overlap;
+            next.end += overlap;
+
+            // Ensure the shifted region doesn't exceed waveform duration
+            if (next.end > waveformDuration) {
+                next.end = waveformDuration;
+                next.start = Math.max(next.start, waveformDuration - 2); // Adjust start if needed
+            }
+        }
+        
+    }
+
+    // Add the regions to the waveform
     transitionRegions.forEach(region => {
         const reg = waveform.addRegion({
             start: region.start,
@@ -3449,19 +3575,105 @@ function addDefaultTransitions() {
         reg.on('update-end', () => refreshTable("none"));
         reg.on('remove', () => refreshTable("none"));
     });
+    if (overlapDetected) {
+        alert("Warning: Some intervals too close. Transition sections were shifted to prevent overlap. This may result in different outputs than expected. Try to ensure a 3+ second gap between intervals.");
+    }
 
-
-    console.log("Added transitions:", transitionRegions);
+    console.log("Added transitions (after resolving overlaps):", transitionRegions);
 }
 
 
 
+// function addTransitionRegions() {
+//     const waveformDuration = waveform.getDuration();
+//     const cursorTime = waveform.getCurrentTime(); // Get the current cursor position
+//     let regionStart = (cursorTime - 0.5).toFixed(2);
+//     let regionEnd = (cursorTime + 0.5).toFixed(2);
+//     if (regionStart < 0){
+//         regionStart = 0;
+//     }
+//     if (regionEnd > audioDuration){
+//         regionEnd = audioDuration
+//     }
+
+//     const reg = waveform.addRegion({
+//         start: regionStart,
+//         end: regionEnd,
+//         color: 'rgba(255, 165, 0, 0.5)',
+//         drag: true,
+//         resize: true,
+//     });
+//     reg.on('update-end', () => refreshTable("trans"));
+//     reg.on('remove', () => refreshTable("trans"));
+//     console.log("add transition region len idx: ", Object.keys(existingTransitionValues).length)
+//     refreshTable("trans");
+
+//     console.log(`Added transition region at center: ${regionStart} to ${regionEnd}`);
+//     // finalizeTimestamps("transition");
+// }
+
 function addTransitionRegions() {
     const waveformDuration = waveform.getDuration();
     const cursorTime = waveform.getCurrentTime(); // Get the current cursor position
-    const regionStart = (cursorTime - 0.5).toFixed(2);
-    const regionEnd = (cursorTime + 0.5).toFixed(2);
+    let regionStart = parseFloat((cursorTime - 0.5).toFixed(2));
+    let regionEnd = parseFloat((cursorTime + 0.5).toFixed(2));
+    
+    if (regionStart < 0) {
+        regionStart = 0;
+    }
+    if (regionEnd > waveformDuration) {
+        regionEnd = waveformDuration;
+    }
 
+    // Check for overlapping regions
+    // const overlappingRegions = [];
+    // Object.keys(existingTransitionValues).forEach((key) => {
+    //     const [existingStart, existingEnd] = existingTransitionValues[key];
+    //     if (
+    //         (regionStart < existingEnd && regionEnd > existingStart) // Overlapping condition
+    //     ) {
+    //         overlappingRegions.push({ key, existingStart, existingEnd });
+    //     }
+    // });
+    const orangeRegions = [];
+    Object.values(waveform.regions.list).forEach((region) => {
+        if (region.color === 'rgba(255, 165, 0, 0.5)') { // Check for orange regions
+            orangeRegions.push({ start: region.start, end: region.end });
+        }
+    });
+
+    // Check for overlapping regions
+    const overlappingRegions = [];
+    orangeRegions.forEach(({ start: existingStart, end: existingEnd }) => {
+        if (regionStart < existingEnd && regionEnd > existingStart) { // Overlapping condition
+            overlappingRegions.push({ existingStart, existingEnd });
+        }
+    });
+
+    // Resolve overlaps
+    overlappingRegions.forEach(({ key, existingStart, existingEnd }) => {
+        if (regionStart < existingStart && regionEnd > existingStart) {
+            // Adjust new region to end before the overlapping region starts
+            regionEnd = existingStart - 0.01;
+        } else if (regionStart < existingEnd && regionEnd > existingEnd) {
+            // Adjust new region to start after the overlapping region ends
+            regionStart = existingEnd + 0.01;
+        } else if (regionStart >= existingStart && regionEnd <= existingEnd) {
+            // If fully contained, adjust new region to not overlap
+            regionStart = existingEnd + 0.01;
+            alert("Cannot overlap regions. Shifted to nearest valid location.")
+        }
+        // Update the overlapping region to prevent further conflicts
+        existingTransitionValues[key] = [existingStart, existingEnd];
+    });
+
+    // Ensure the new region is valid after adjustments
+    if (regionStart >= regionEnd) {
+        console.log("Cannot add region: resulting start/end times are invalid.");
+        return;
+    }
+
+    // Add the new region
     const reg = waveform.addRegion({
         start: regionStart,
         end: regionEnd,
@@ -3469,15 +3681,21 @@ function addTransitionRegions() {
         drag: true,
         resize: true,
     });
+
+    // Event listeners for updates
     reg.on('update-end', () => refreshTable("trans"));
     reg.on('remove', () => refreshTable("trans"));
-    console.log("add transition region len idx: ", Object.keys(existingTransitionValues).length)
-    // addTransitions(Object.keys(existingTransitionValues).length, regionStart, regionEnd, Object.keys(existingTransitionValues).length, existingTransitionValues);
+
+    // Add the new region to existingTransitionValues
+    const newRegionKey = Object.keys(existingTransitionValues).length;
+    existingTransitionValues[newRegionKey] = [regionStart, regionEnd];
+
+    console.log(`Added transition region at: ${regionStart} to ${regionEnd}`);
     refreshTable("trans");
 
-    console.log(`Added transition region at center: ${regionStart} to ${regionEnd}`);
     // finalizeTimestamps("transition");
 }
+
 
 function delete_transitions() {
     // Toggle delete mode for transitions
@@ -3668,9 +3886,12 @@ function refreshTable(new_type, transitionData = {}) {
         console.log("refreshTable existingTransitionValues 3: ", existingTransitionValues)
 
 
-
-        const audioDuration = waveform.getDuration();
-        finalizeTimestamps("time", newRegionIndex_form, newRegionIndex_trans, transitionData);
+        if(new_type == "2D" || new_type == "3D"){
+            finalizeTimestamps(new_type, newRegionIndex_form, newRegionIndex_trans,transitionData);
+        }else{
+            const audioDuration = waveform.getDuration();
+            finalizeTimestamps("time", newRegionIndex_form, newRegionIndex_trans, transitionData);
+        }
     }
 }
 
@@ -3827,11 +4048,44 @@ function toggleMotion() {
     if (button.textContent === "3D Motion") {
         button.textContent = "2D Motion";
         motion_mode = "2D";
+        console.log("toggle 3d to 2d")
+        Object.keys(existingValues).forEach(key => {
+            const valuesArray = existingValues[key];
+            if (valuesArray && valuesArray.length >= 2) {
+                const index = valuesArray.length - 2;
+                const value = valuesArray[index];
+                console.log("toggle val form: ", value);
+                if (value.startsWith("rotate_c")) {
+                    valuesArray[index] = value.replace("rotate_c", "spin_c");
+                } else if (value.startsWith("rotate")) {
+                    valuesArray[index] = value.replace("rotate", "pan");
+                }
+            }
+        });
+
+        // Refresh the table or UI to reflect the changes
+        refreshTable("2D");
         // Add code here to handle the change to 3D motion
         // console.log("Switched to 2D Motion");
     } else {
         button.textContent = "3D Motion";
         motion_mode = "3D";
+
+        console.log("toggle 3d to 2d")
+        Object.keys(existingValues).forEach(key => {
+            const valuesArray = existingValues[key];
+            if (valuesArray && valuesArray.length >= 2) {
+                const index = valuesArray.length - 2;
+                const value = valuesArray[index];
+                console.log("toggle val form: ", value);
+                if (value.startsWith("spin")) {
+                    valuesArray[index] = value.replace("spin", "rotate");
+                } else if (value.startsWith("pan")){
+                    valuesArray[index] = value.replace("pan", "rotate");
+                }
+            }
+        });
+        refreshTable("3D");
         // Add code here to handle the change to 2D motion
         // console.log("Switched to 3D Motion");
     }
@@ -4041,7 +4295,6 @@ function initializeWaveform(intervalTimes, transitionTimes) {
             reg.on('update-end', () => refreshTable("trans"));
             reg.on('remove', () => refreshTable("trans"));
             console.log("add transition region len idx: ", Object.keys(existingTransitionValues).length)
-            // addTransitions(Object.keys(existingTransitionValues).length, regionStart, regionEnd, Object.keys(existingTransitionValues).length, existingTransitionValues);
             refreshTable("trans");
         });
     }

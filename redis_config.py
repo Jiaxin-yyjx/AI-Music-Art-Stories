@@ -16,7 +16,8 @@ def get_redis_connection():
         port=url.port,            # Redis port (either local or from REDIS_URL)
         password=url.password,    # Redis password (if any in REDIS_URL)
         ssl=(url.scheme == "rediss"),  # Enable SSL if scheme is "rediss"
-        ssl_cert_reqs=None        # Optionally specify SSL certificate requirements, None means no verification
+        ssl_cert_reqs=None,        # Optionally specify SSL certificate requirements, None means no verification
+        db=0
     )
     
     return redis_conn
