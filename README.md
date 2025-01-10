@@ -32,9 +32,9 @@ python app.py
 python helpers.py
 ```
 
-5. Run redis (use for concurrent processing for heroku)
+5. Run redis (used for concurrent processing in heroku)
 ```bash
-redis
+redis-server
 ```
 You may need to install redis on your computer if you haven't already. If you run into issues, check redis_config.py to ensure localhost url is set correctly and run redis-cli to check (in browser) if workers are being queued and run as expected.
 

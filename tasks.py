@@ -1,7 +1,9 @@
 import time  # Simulating long tasks
 import datetime
 from redis import Redis
-from queue_config import queue
+import cloudinary.uploader
+import json
+from queue_config import queue, redis_conn
 import os
 from flask import jsonify
 from rq import get_current_job
@@ -218,6 +220,19 @@ def generate_image_task(data):
             image_url = str(output[0])
             init_image = image_url
             print('init_image new: ', init_image)
+            cloudinary_response = cloudinary.uploader.upload(image_url)
+            cloudinary_image_url = cloudinary_response.get('secure_url')
+
+            # Save the Cloudinary URL to Redis for later retrieval
+            # redis_conn.set(job.get_id(), cloudinary_image_url)
+            timestamp = time.time()
+            public_id = cloudinary_response.get('public_id')
+            redis_conn.set(f'image:{timestamp}.{public_id}', cloudinary_image_url)
+            redis_conn.hset(f'image_metadata:{public_id}', 'prompt', prompt)
+            redis_conn.hset(f'image_metadata:{public_id}', 'timestamp', timestamp)
+            print("saving under timestamp: ", timestamp, public_id)
+
+            print('Image uploaded to Cloudinary:', cloudinary_image_url, public_id)
             return {'status': "success", 'output': image_url}  # Return the result data instead of jsonify
 
         return {"status": "error", 'error': 'Unexpected output format'}  # Return error message as dict
@@ -330,5 +345,13 @@ def long_running_task(data):
     except JobTimeoutException:
         # Log or handle the timeout exception here
         return {"status": "error", "error": "Task exceeded maximum timeout value"}
+    except Exception as e:
+        # Log the error and store the error message in the job metadata
+        current_job = get_current_job()
+        if current_job:
+            current_job.set_status('failed')
+            current_job.meta['error'] = str(e)
+            current_job.save_meta()
+        raise
     # Perform task
     return {"result": "Task completed"}
