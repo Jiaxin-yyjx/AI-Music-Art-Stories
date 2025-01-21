@@ -5,6 +5,63 @@ function show_brainstorming() {
 }
 
 $(document).ready(function () {
+    fetchRecentImages();
+
+    // Function to fetch recent images from the backend
+    function fetchRecentImages() {
+        $.ajax({
+            url: '/get_recent_images',
+            type: 'GET',
+            success: function (response) {
+                if (response.status === 'success') {
+                    const imagesContainer = $('#recent-images-container');
+                    imagesContainer.empty(); // Clear any existing images
+
+                    response.images.forEach(image => {
+                        
+                        const imageElement = $('<div class="img-wrapper"></div>');
+                        const img = $('<img src="' + image.url + '" alt="Generated Image" class="img">');
+                        const prompt = $('<p class="image-prompt">Prompt: ' + image.prompt + '</p>');
+
+                        // When clicking on the image, show the prompt
+                        img.on('click', function () {
+                            alert('Prompt: ' + image.prompt); // You can display it differently, like in a modal
+                        });
+
+                        // Make the image draggable
+                        img.on('mousedown', function (event) {
+                            const $image = $(this);
+                            let offsetX = event.clientX - $image.position().left;
+                            let offsetY = event.clientY - $image.position().top;
+
+                            $(document).on('mousemove.draggable', function (event) {
+                                $image.css({
+                                    left: event.clientX - offsetX,
+                                    top: event.clientY - offsetY
+                                });
+                            });
+
+                            $(document).on('mouseup.draggable', function () {
+                                $(document).off('.draggable');
+                            });
+                        });
+
+                        imageElement.append(img);
+                        imageElement.append(prompt);
+                        imagesContainer.append(imageElement);
+                    });
+                } else {
+                    console.error('Failed to load recent images');
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Error fetching recent images:', error);
+            }
+        });
+    }
+
+
+
     $('#image-form').on('submit', function (event) {
         event.preventDefault();
         let prompt = $('#prompt').val();

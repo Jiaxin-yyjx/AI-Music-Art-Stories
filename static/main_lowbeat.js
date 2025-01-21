@@ -22,6 +22,7 @@ let updatedOrangeRegions = [];
 let existingTransitionValues = {};
 let existingValues = {};
 let added = true;
+let selectedFile = null;
 
 const vibes = ['calm', 'epic', 'aggressive', 'chill', 'dark', 'energetic', 'ethereal', 'happy', 'romantic', 'sad', 'scary', 'sexy', 'uplifting'];
 const textures = ['painting', 'calligraphy brush ink stroke', 'pastel watercolor on canvas', 'charcoal drawing', 'pencil drawing', 'impasto palette knife painting', 'mosaic', 'jagged/irregular', 'rubbed graphite on paper', 'digital glitch', 'splattered paint', 'graffiti', 'ink blots'];
@@ -404,7 +405,7 @@ function show_transitions() {
     nextButton.style.display = "none";
 }
 
-function show_default_boxes() {
+function show_default_boxes(vibeInputVal = "", colorInputVal = "", imageryInputVal = "", textureInputVal = "") {
     //show items in input details and image gallery
     const finalizeButton = document.getElementById("finalize-timestamps");
     const detailsBox = document.getElementById("detailsBox")
@@ -412,8 +413,13 @@ function show_default_boxes() {
     const colorBox = document.getElementById("colorBox")
     const imageryBox = document.getElementById("imageryBox")
     const textureBox = document.getElementById("textureBox")
+    const vibeInput = document.getElementById("vibeInput");
+    const colorInput = document.getElementById("colorInput");
+    const imageryInput = document.getElementById("imageryInput");
+    const textureInput = document.getElementById("textureInput");
     const image_examples = document.getElementById("image_examples")
     const detail_gallery_toggle = document.getElementById("dropdownToggle")
+    console.log("IN SHOW DEFAULT BOXES: ", vibeInputVal, colorInputVal, imageryInputVal, textureInputVal)
 
 
     const fillDefaultsButton = document.getElementById("fill-defaults")
@@ -456,7 +462,11 @@ function show_default_boxes() {
 
     // Update color picker whenever color input changes
     colorInput.addEventListener("input", updateColorPickerFromInput);
-
+    // console.log("DEFAULT BOX INPUT: ", vibeInput, colorInput, imageryInput,)
+    vibeInput.value = vibeInputVal;
+    colorInput.value = colorInputVal;
+    imageryInput.value = imageryInputVal;
+    textureInput.value = textureInputVal;
 
     // Add default transition options
     let allRegions = Object.values(waveform.regions.list);
@@ -504,18 +514,24 @@ function makeTimestamp(isTrans) {
 }
 
 
-function finalizeTimestamps(name, regionIndex_form, regionIndex_trans) {
+function finalizeTimestamps(name, regionIndex_form, regionIndex_trans, transitionData = {}) {
     // const timestampsContainer = document.getElementById('timestampsContainer');
     // timestampsContainer.innerHTML = ''; // Clear previous timestamps
 
     const roundedSignificantPoints = newsigPoints.map(point => point.toFixed(2));
-    const timestamps = [0, ...roundedSignificantPoints, audioDuration.toFixed(2)].map(Number);
+    console.log("ROUNDED SIG: ", roundedSignificantPoints);
 
+    // Convert to numbers, add boundaries, and sort
+    const timestamps = [0, ...roundedSignificantPoints, audioDuration.toFixed(2)]
+    .map(Number)
+    .sort((a, b) => a - b);
+
+    console.log("TIMESTAMP: ", timestamps);
     const sectionsCount = newsigPoints.length;
     let container;
     let labels = [];
 
-    if (name === 'time') {
+    if (name === 'time' || name == "2D" || name == "3D") {
         container = document.getElementById('trash');
         container.style.border = "2px solid black";
         labels = ['Vibe', 'Imagery', 'Texture', 'Style', 'Color', 'Motion', 'Strength']
@@ -603,7 +619,7 @@ function finalizeTimestamps(name, regionIndex_form, regionIndex_trans) {
 
 
 
-
+    
     container.innerHTML = ''; // Clear previous content
     container.style.setProperty('--sections-count', sectionsCount);
 
@@ -844,6 +860,7 @@ function finalizeTimestamps(name, regionIndex_form, regionIndex_trans) {
             existingTransitionValues[regionIndex_trans] = ['', ''];
             // console.log("existingTransitionValues after: ", existingTransitionValues);
         } else if (regionIndex_trans < 0) {
+            
             const trans_idx = Object.keys(existingTransitionValues).length + regionIndex_trans;
             delete existingTransitionValues[trans_idx];
             existingTransitionValues = Object.keys(existingTransitionValues)
@@ -861,11 +878,12 @@ function finalizeTimestamps(name, regionIndex_form, regionIndex_trans) {
         // Now, use the sorted timestamps to add transitions
         sortedRegions.forEach((region, index) => {
             const transitionStart = region.startTime;
+            console
             const transitionEnd = region.endTime;
 
-            // console.log("existing transition main low ")
-            // console.log( existingTransitionValues)
-            addTransitions(index, transitionStart, transitionEnd, Math.abs(Object.keys(existingTransitionValues).length - 1 - index), existingTransitionValues, regionIndex_trans);
+            console.log("existing transition main low: ", transitionStart, transitionEnd, name);
+            // console.log(existingTransitionValues)
+            addTransitions(index, transitionStart, transitionEnd, Math.abs(Object.keys(existingTransitionValues).length - 1 - index), existingTransitionValues, regionIndex_trans, transitionData, name);
 
         });
 
@@ -905,95 +923,6 @@ function finalizeTimestamps(name, regionIndex_form, regionIndex_trans) {
 
     tablemade = true;
 }
-
-// function deleteSection() {
-//     const deleteButton = document.getElementById('delete-section');
-//     let deleteMode = false;
-
-//     deleteButton.addEventListener('click', () => {
-//         deleteMode = !deleteMode;
-//         // console.log(deleteMode);
-//         deleteButton.innerText = deleteMode ? 'Exit Delete Mode' : 'Delete Section';
-
-//         if (deleteMode) {
-//             // console.log('Delete Mode');
-//             document.querySelectorAll('.section').forEach(section => {
-//                 // Highlight sections for deletion
-//                 section.style.border = '2px dashed red';
-
-//                 // Add click event listener for deletion
-//                 section.addEventListener('click', handleSectionDeletion);
-//             });
-//         } else {
-//             // Exit delete mode and remove highlights
-//             // console.log("not delete mode?");
-//             document.querySelectorAll('.section').forEach(section => {
-//                 section.style.border = ''; // Remove the highlight
-//                 section.removeEventListener('click', handleSectionDeletion); // Remove event listener to avoid issues
-//             });
-//         }
-//     });
-
-//     function handleSectionDeletion(event) {
-//         if (deleteMode) {
-//             const section = event.currentTarget;
-
-//             // Confirm deletion with the user
-//             const confirmed = confirm('Are you sure you want to delete this section?');
-//             if (confirmed) {
-//                 // Remove the section from the DOM
-//                 section.remove();
-//             }
-//         }
-//     }
-// }
-
-
-// function addTransitions(startTime, endTime) {
-//     console.log("ADD TTRANSITION CALLED");
-//     const formContainers = document.querySelectorAll('.section');
-
-//     formContainers.forEach((form, index) => {
-//         const formStartTime = parseFloat(form.querySelector('.time-range').innerText.split('-')[0]);
-//         const formEndTime = parseFloat(form.querySelector('.time-range').innerText.split('-')[1]);
-
-//         if (startTime >= formStartTime && startTime < formEndTime) {
-//             // Create the transition container
-//             const transitionContainer = document.createElement('div');
-//             transitionContainer.className = 'section transition-section';
-//             transitionContainer.innerHTML = `
-//                 <div class="time-range">Transition (${startTime}s to ${endTime}s)</div>
-//                 <div class="input-container">
-//                     <label for="motion_trans_${startTime}_${endTime}">Motion:</label>
-//                     <input type="text" id="motion_trans_${startTime}_${endTime}">
-//                     <label for="strength_trans_${startTime}_${endTime}">Strength:</label>
-//                     <input type="text" id="strength_trans_${startTime}_${endTime}">
-//                     <label for="speed_trans_${startTime}_${endTime}">Speed:</label>
-//                     <input type="text" id="speed_trans_${startTime}_${endTime}">
-//                 </div>
-//             `;
-
-//             // Add the play button to preview the transition
-//             const playButton = document.createElement('button');
-//             playButton.innerText = 'Banana3';
-//             playButton.addEventListener('click', () => playTimeRange(startTime, endTime));
-//             transitionContainer.appendChild(playButton);
-
-//             // Add the delete button to remove the transition
-//             const deleteButton = document.createElement('button');
-//             deleteButton.innerText = 'Delete';
-//             deleteButton.style.marginLeft = '10px';
-//             deleteButton.addEventListener('click', () => {
-//                 transitionContainer.remove();
-//             });
-//             transitionContainer.appendChild(deleteButton);
-
-//             // Insert the transition container in the appropriate position
-//             form.insertAdjacentElement('afterend', transitionContainer);
-//         }
-//     });
-// } 
-
 
 
 //WORKING
@@ -1172,10 +1101,44 @@ let existingTransitions = []; // Track all transitions globally
 //     });
 // }
 
-function addTransitions(id, startTime, endTime, i, existingTransitionValues, regionIndex) {
+function addTransitions(id, startTime, endTime, i, existingTransitionValues, regionIndex, transitionData = {}, name = "") {
+    console.log("existing transitions IN ADD TRANSITION: ", existingTransitionValues, name)
     // console.log("AddTrans2 called");
     const formContainers = document.querySelectorAll('.section');
     // console.log("formcontainer: ", formContainers)
+    if (name == "2D"){
+        console.log("enter addTransition for 2D motion toggle")
+        // Update the first item in each sub-array of existingTransitionValues
+        Object.keys(existingTransitionValues).forEach(key => {
+            const transitionArray = existingTransitionValues[key];
+            if (transitionArray && transitionArray.length >= 1) {
+                const value = transitionArray[0];
+                // console.log("toggle val trans: ", value);
+                if (value.startsWith("rotate_c")) {
+                    transitionArray[0] = value.replace("rotate_c", "spin_c");
+                } else if (value.startsWith("rotate")) {
+                    transitionArray[0] = value.replace("rotate", "pan");
+                }
+            }
+        });
+        // console.log("after change, exist trans in add trans: ", existingTransitionValues)
+    }else if (name == "3D"){
+        console.log("enter addTransition for 3D motion toggle")
+        // Update the first item in each sub-array of existingTransitionValues
+        Object.keys(existingTransitionValues).forEach(key => {
+            const transitionArray = existingTransitionValues[key];
+            if (transitionArray && transitionArray.length >= 1) {
+                const value = transitionArray[0];
+                // console.log("toggle val trans: ", value);
+                if (value.startsWith("spin")) {
+                    transitionArray[0] = value.replace("spin", "rotate");
+                } else if (value.startsWith("pan")) {
+                    transitionArray[0] = value.replace("pan", "rotate");
+                } 
+            }
+        });
+        // console.log("after change, exist trans in add trans: ", existingTransitionValues)
+    }
 
     formContainers.forEach((form) => {
         const formStartTime = parseFloat(form.querySelector('.time-range').innerText.split('-')[0]);
@@ -1308,25 +1271,47 @@ function addTransitions(id, startTime, endTime, i, existingTransitionValues, reg
                     // console.log("Blur: ", existingTransitionValues);
                 });
 
+                if (name == "2D"){
+                    console.log("for name 2D check if conditions met: ", tablemade, Object.keys(existingTransitionValues).length)
+                }
                 if (tablemade && Object.keys(existingTransitionValues).length > 0) {
                     // console.log("enter loop: ", Object.keys(existingTransitionValues));
+                    // console.log("check for transitionData inside: ", transitionData);                    
+                    if (transitionData) {
+                        console.log("enter transitiondata")
+                        // existingTransitionValues = data
+                        index = 0;
+                        // let tmpDict = {}
+                        const transitionKeys = Object.keys(transitionData).reverse(); // Reverse the keys
+                        for (const interval of transitionKeys) {
+                            // console.log("transitionData: ", transitionData)
+                            // console.log("transitionData val: ", transitionData[interval])
+                            console.log("INTERVAL:", interval);
+                            if (transitionData.hasOwnProperty(interval)) {
+                                const item = transitionData[interval];
+                                console.log("index, ITEM:", index, item['motion'],item['strength']);
+                                existingTransitionValues[index] = [
+                                    item['motion'],
+                                    item['strength']
+                                ];
+                                console.log("Added to existing trans vals:", existingTransitionValues);
+                                index++;
+                            }
+                        }
+                    }
+                    // existingTransitionValues = {0: ["jump", "up"], 1: ["die", "down"]}
                     if (existingTransitionValues[id] && existingTransitionValues[id][inputTypes.indexOf(type)]) {
                         input.value = existingTransitionValues[id][inputTypes.indexOf(type)];
 
                     }
                 }
 
-
-
-
-
-
             });
         }
     });
 }
 
-function fillDefaultsTemp() {
+function fillDefaultsTemp(load = false) {
     const vibeInput = document.getElementById("vibeInput");
     const colorInput = document.getElementById("colorInput");
     const imageryInput = document.getElementById("imageryInput");
@@ -1350,7 +1335,13 @@ function fillDefaultsTemp() {
     const toggleButton = document.getElementById("toggleMotionButton");
     toggleButton.style.display = "block";
     trash.style.display = "flex";
-    fillDefaults();
+    if(load == true){
+        console.log("DON'T FILL DEFAULTS");
+    }else{
+        console.log("FILL DEFAULTS")
+        fillDefaults();
+    }
+    
     processButton.style.display = "block";
     seed.style.display = "inline-block";
 }
@@ -1573,8 +1564,8 @@ function fillDefaults() {
 
 // Validation Function
 function validateInputs(motionInput, strengthInput, index) {
-    console.log("motion values: ", motionInput)
-    console.log("strengthValues", strengthInput)
+    // console.log("motion values: ", motionInput)
+    // console.log("strengthValues", strengthInput)
     // Split inputs by comma
     const motionValues = motionInput.split(",").map(item => item.trim());
     const strengthValues = strengthInput.split(",").map(item => item.trim());
@@ -1596,7 +1587,7 @@ function validateInputs(motionInput, strengthInput, index) {
         // Check if value is not a valid strength or a valid mathematical function or integer
         const isInteger = /^-?\d+$/.test(value); // Matches positive or negative integers
         const isValidFunction = /^-?(\d+(\.\d+)?(\*\d+(\.\d+)?)*)?\*?(sin|cos|tan)\((-?\d+(\.\d+)?(\*\d+(\.\d+)?)*)?\*?t\/\d+(\.\d+)?\)$/.test(value); // Matches functions like 10*sin(2*t/5)
-        console.log(!strengths.includes(value), !isInteger, !isValidFunction)
+        // console.log(!strengths.includes(value), !isInteger, !isValidFunction)
         return !strengths.includes(value) && !isInteger && !isValidFunction;
     });
 
@@ -1612,7 +1603,13 @@ function validateInputs(motionInput, strengthInput, index) {
 
 // Updated gatherFormData function
 function gatherFormData() {
-    let roundedSignificantPoints = newsigPoints.map(point => point.toFixed(2));
+    // let roundedSignificantPoints = newsigPoints.map(point => point.toFixed(2));
+    let roundedSignificantPoints = newsigPoints
+        .map(point => point.toFixed(2))
+        .map(Number) // Ensure they are numbers
+        .sort((a, b) => a - b); // Sort in ascending order
+
+    console.log("ROUNDED SIG (sorted): ", roundedSignificantPoints);
 
     // Add the final timestamp if it's not already included
     const finalTimeStamp = audioDuration.toFixed(2);
@@ -1830,9 +1827,13 @@ function checkJobStatus(jobId) {
             }
             else if (statusData.status === 'failed') {
                 // If the job has failed, stop polling and display an error
+                // loadingIndicator.style.display = 'none';
+                // console.error("Job failed:", statusData.error || "Unknown error");
+                // alert(`Job failed: ${statusData.error || "An unknown error occurred"}`);
+                // clearInterval(interval); // Stop polling
                 loadingIndicator.style.display = 'none';
-                console.error("Job failed:", statusData.error || "Unknown error");
-                alert(`Job failed: ${statusData.error || "An unknown error occurred"}`);
+                console.error("Job failed:", statusData.error);
+                alert(`Job failed: ${statusData.error}`);
                 clearInterval(interval); // Stop polling
             }
         })
@@ -1904,7 +1905,46 @@ function buildResultHTML(result) {
 }
 
 function processTable() {
+
+    const orangeRegions = [];
+    Object.values(waveform.regions.list).forEach((region) => {
+        if (region.color === 'rgba(255, 165, 0, 0.5)') { // Identify orange regions
+            orangeRegions.push({ start: region.start, end: region.end });
+        }
+    });
+
+    // Sort regions by start time to simplify overlap checks
+    orangeRegions.sort((a, b) => a.start - b.start);
+
+    const overlappingIntervals = [];
+    for (let i = 0; i < orangeRegions.length - 1; i++) {
+        const current = orangeRegions[i];
+        const next = orangeRegions[i + 1];
+
+        if (current.end > next.start) {
+            // Add overlapping intervals to the list
+            overlappingIntervals.push({
+                currentStart: current.start.toFixed(2),
+                currentEnd: current.end.toFixed(2),
+                nextStart: next.start.toFixed(2),
+                nextEnd: next.end.toFixed(2),
+            });
+        }
+    }
+
+    if (overlappingIntervals.length > 0) {
+        // Format overlapping intervals for alert
+        const overlappingMessage = overlappingIntervals.map(interval => 
+            `Overlap detected between [${interval.currentStart}, ${interval.currentEnd}] and [${interval.nextStart}, ${interval.nextEnd}]`
+        ).join('\n');
+
+        alert(`Overlapping orange regions detected. Please adjust them before proceeding:\n${overlappingMessage}`);
+        console.log("Overlapping intervals:", overlappingIntervals);
+        return; // Stop execution if overlaps are found
+    }
+
     const formData = gatherFormData();
+    console.log("FORM DATA: ", formData);
     const transitionsData = gatherTransitionData(formData);
     let seed = document.getElementById("seed").value;
     document.getElementById('processedDataContainer').innerHTML = '';
@@ -1956,37 +1996,7 @@ function processTable() {
             // Call the function to check the job status
             checkJobStatus(jobId);
             console.log("done checking job status");
-            // console.log("returned back");
-            // for (const [key, value] of Object.entries(data)) {
-            //     // console.log(`${key}: ${value}`);
-            //     if (key === 'output') {
-            //         // console.log(value);
-            //         window.open(value, '_blank');
-            //     }
-            // }
-            // let resultHTML = '';
-
-            // // if (data.animation_prompts) {
-            // //     resultHTML += `<h3>Animation Prompts:</h3><p>${data.animation_prompts}</p>`;
-            // // }
-
-            // if (data.motion_prompts) {
-            //     resultHTML += `<h3>Motion Strings:</h3>`;
-            //     for (const [motion, transitions] of Object.entries(data.motion_prompts)) {
-            //         resultHTML += `<p>${motion}: ${transitions.join(', ')}</p>`;
-            //     }
-            // }
-
-            // if (data.prompts) {
-            //     resultHTML += `<h3>Prompts:</h3><p>${data.prompts}</p>`;
-            // }
-
-            // if (data.output) {
-            //     resultHTML += `<h3>Output:</h3><p><a href="${data.output}" target="_blank">Click here to view the output</a></p>`;
-            // }
-
-            // document.getElementById('processedDataContainer').innerHTML = resultHTML;
-            // document.getElementById('processedDataContainer').style = "border: 2px solid black;"
+            
         })
         .catch(error => {
             console.error('Error:', error);
@@ -2065,7 +2075,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const audioFileInput = document.getElementById('audioFile');
     console.log("file: " + audioFileInput)
     let fileSelected = false;
-    let selectedFile = null;
+    selectedFile = null;
     
     function validateApiKey() {
         // Get the value of the API key field
@@ -2414,6 +2424,8 @@ function processAudio() {
     const play_buttons_box = document.getElementById("playbuttons");
     // const slider = document.getElementById("slider")
     const loadingIndicator = document.getElementById("loadingIndicator");
+    const loadState = document.getElementById("loadState");
+    const saveState = document.getElementById("saveState");
     audioZoom(); // Function to set all the zooom stuff up
 
 
@@ -2422,6 +2434,8 @@ function processAudio() {
     play_start_button.style.display = "block";
     play_buttons_box.style.display = "flex"
     loadingIndicator.style.display = "block";
+    loadState.style.display = "block";
+    saveState.style.display = "block";
 
     // const clearButton = document.getElementById('clearButton');
 
@@ -3436,10 +3450,62 @@ function delete_intervals() {
     }
 }
 
+// function addDefaultTransitions() {
+//     const allRegions = Object.values(waveform.regions.list);
+//     const greenRegions = allRegions.filter(region => region.color === 'green');
+//     let transitionRegions = [];
+
+//     // Create 1 sec transition around interval start time
+//     greenRegions.forEach(region => {
+//         const startTime = region.start;
+
+//         const transitionStart = Math.max(0, startTime - 0.5); // Ensure start time is not negative
+//         const transitionEnd = startTime + 0.5;
+
+//         transitionRegions.push({ start: transitionStart, end: transitionEnd });
+//     });
+
+//     transitionRegions.sort((a, b) => a.start - b.start);
+//     const waveformDuration = waveform.getDuration();
+
+//     if (transitionRegions.length > 0) {
+//         const lastTransitionEnd = transitionRegions[transitionRegions.length - 1].end;
+
+//         // Check for overlap
+//         if (lastTransitionEnd >= waveformDuration - 1.5) {
+//             // Align final transition
+//             transitionRegions.push({ start: lastTransitionEnd, end: waveformDuration });
+//         } else {
+//             // Final transition of 2 seconds capped at the waveform's duration
+//             const finalStart = waveformDuration - 1.5;
+//             transitionRegions.push({ start: finalStart, end: waveformDuration });
+//         }
+//     } else {
+//         // If no transitions, add a final transition from 2 seconds before the end
+//         transitionRegions.push({ start: waveformDuration - 1.5, end: waveformDuration });
+//     }
+
+//     // add the regions to the waveform
+//     transitionRegions.forEach(region => {
+//         const reg = waveform.addRegion({
+//             start: region.start,
+//             end: region.end,
+//             color: 'rgba(255, 165, 0, 0.5)',
+//             drag: true,
+//             resize: true,
+//         });
+//         reg.on('update-end', () => refreshTable("none"));
+//         reg.on('remove', () => refreshTable("none"));
+//     });
+
+
+//     console.log("Added transitions:", transitionRegions);
+// }
 function addDefaultTransitions() {
     const allRegions = Object.values(waveform.regions.list);
     const greenRegions = allRegions.filter(region => region.color === 'green');
     let transitionRegions = [];
+    let overlapDetected = false;
 
     // Create 1 sec transition around interval start time
     greenRegions.forEach(region => {
@@ -3451,13 +3517,15 @@ function addDefaultTransitions() {
         transitionRegions.push({ start: transitionStart, end: transitionEnd });
     });
 
+    // Sort regions by start time for easier overlap resolution
     transitionRegions.sort((a, b) => a.start - b.start);
+
     const waveformDuration = waveform.getDuration();
 
     if (transitionRegions.length > 0) {
         const lastTransitionEnd = transitionRegions[transitionRegions.length - 1].end;
 
-        // Check for overlap
+        // Check for overlap with waveform duration
         if (lastTransitionEnd >= waveformDuration - 1.5) {
             // Align final transition
             transitionRegions.push({ start: lastTransitionEnd, end: waveformDuration });
@@ -3471,7 +3539,31 @@ function addDefaultTransitions() {
         transitionRegions.push({ start: waveformDuration - 1.5, end: waveformDuration });
     }
 
-    // add the regions to the waveform
+    // Resolve overlaps by shifting overlapping regions
+    for (let i = 0; i < transitionRegions.length - 1; i++) {
+        const current = transitionRegions[i];
+        const next = transitionRegions[i + 1];
+        
+
+        // If there's an overlap, shift the next region's start and end by 0.01
+        if (current.end > next.start) {
+            overlapDetected = true;
+            const shiftAmount = 0.01;
+            const overlap = current.end - next.start + shiftAmount;
+
+            next.start += overlap;
+            next.end += overlap;
+
+            // Ensure the shifted region doesn't exceed waveform duration
+            if (next.end > waveformDuration) {
+                next.end = waveformDuration;
+                next.start = Math.max(next.start, waveformDuration - 2); // Adjust start if needed
+            }
+        }
+        
+    }
+
+    // Add the regions to the waveform
     transitionRegions.forEach(region => {
         const reg = waveform.addRegion({
             start: region.start,
@@ -3483,19 +3575,105 @@ function addDefaultTransitions() {
         reg.on('update-end', () => refreshTable("none"));
         reg.on('remove', () => refreshTable("none"));
     });
+    if (overlapDetected) {
+        alert("Warning: Some intervals too close. Transition sections were shifted to prevent overlap. This may result in different outputs than expected. Try to ensure a 3+ second gap between intervals.");
+    }
 
-
-    console.log("Added transitions:", transitionRegions);
+    console.log("Added transitions (after resolving overlaps):", transitionRegions);
 }
 
 
 
+// function addTransitionRegions() {
+//     const waveformDuration = waveform.getDuration();
+//     const cursorTime = waveform.getCurrentTime(); // Get the current cursor position
+//     let regionStart = (cursorTime - 0.5).toFixed(2);
+//     let regionEnd = (cursorTime + 0.5).toFixed(2);
+//     if (regionStart < 0){
+//         regionStart = 0;
+//     }
+//     if (regionEnd > audioDuration){
+//         regionEnd = audioDuration
+//     }
+
+//     const reg = waveform.addRegion({
+//         start: regionStart,
+//         end: regionEnd,
+//         color: 'rgba(255, 165, 0, 0.5)',
+//         drag: true,
+//         resize: true,
+//     });
+//     reg.on('update-end', () => refreshTable("trans"));
+//     reg.on('remove', () => refreshTable("trans"));
+//     console.log("add transition region len idx: ", Object.keys(existingTransitionValues).length)
+//     refreshTable("trans");
+
+//     console.log(`Added transition region at center: ${regionStart} to ${regionEnd}`);
+//     // finalizeTimestamps("transition");
+// }
+
 function addTransitionRegions() {
     const waveformDuration = waveform.getDuration();
     const cursorTime = waveform.getCurrentTime(); // Get the current cursor position
-    const regionStart = (cursorTime - 0.5).toFixed(2);
-    const regionEnd = (cursorTime + 0.5).toFixed(2);
+    let regionStart = parseFloat((cursorTime - 0.5).toFixed(2));
+    let regionEnd = parseFloat((cursorTime + 0.5).toFixed(2));
+    
+    if (regionStart < 0) {
+        regionStart = 0;
+    }
+    if (regionEnd > waveformDuration) {
+        regionEnd = waveformDuration;
+    }
 
+    // Check for overlapping regions
+    // const overlappingRegions = [];
+    // Object.keys(existingTransitionValues).forEach((key) => {
+    //     const [existingStart, existingEnd] = existingTransitionValues[key];
+    //     if (
+    //         (regionStart < existingEnd && regionEnd > existingStart) // Overlapping condition
+    //     ) {
+    //         overlappingRegions.push({ key, existingStart, existingEnd });
+    //     }
+    // });
+    const orangeRegions = [];
+    Object.values(waveform.regions.list).forEach((region) => {
+        if (region.color === 'rgba(255, 165, 0, 0.5)') { // Check for orange regions
+            orangeRegions.push({ start: region.start, end: region.end });
+        }
+    });
+
+    // Check for overlapping regions
+    const overlappingRegions = [];
+    orangeRegions.forEach(({ start: existingStart, end: existingEnd }) => {
+        if (regionStart < existingEnd && regionEnd > existingStart) { // Overlapping condition
+            overlappingRegions.push({ existingStart, existingEnd });
+        }
+    });
+
+    // Resolve overlaps
+    overlappingRegions.forEach(({ key, existingStart, existingEnd }) => {
+        if (regionStart < existingStart && regionEnd > existingStart) {
+            // Adjust new region to end before the overlapping region starts
+            regionEnd = existingStart - 0.01;
+        } else if (regionStart < existingEnd && regionEnd > existingEnd) {
+            // Adjust new region to start after the overlapping region ends
+            regionStart = existingEnd + 0.01;
+        } else if (regionStart >= existingStart && regionEnd <= existingEnd) {
+            // If fully contained, adjust new region to not overlap
+            regionStart = existingEnd + 0.01;
+            alert("Cannot overlap regions. Shifted to nearest valid location.")
+        }
+        // Update the overlapping region to prevent further conflicts
+        existingTransitionValues[key] = [existingStart, existingEnd];
+    });
+
+    // Ensure the new region is valid after adjustments
+    if (regionStart >= regionEnd) {
+        console.log("Cannot add region: resulting start/end times are invalid.");
+        return;
+    }
+
+    // Add the new region
     const reg = waveform.addRegion({
         start: regionStart,
         end: regionEnd,
@@ -3503,15 +3681,21 @@ function addTransitionRegions() {
         drag: true,
         resize: true,
     });
+
+    // Event listeners for updates
     reg.on('update-end', () => refreshTable("trans"));
     reg.on('remove', () => refreshTable("trans"));
-    console.log("add transition region len idx: ", Object.keys(existingTransitionValues).length)
-    // addTransitions(Object.keys(existingTransitionValues).length, regionStart, regionEnd, Object.keys(existingTransitionValues).length, existingTransitionValues);
+
+    // Add the new region to existingTransitionValues
+    const newRegionKey = Object.keys(existingTransitionValues).length;
+    existingTransitionValues[newRegionKey] = [regionStart, regionEnd];
+
+    console.log(`Added transition region at: ${regionStart} to ${regionEnd}`);
     refreshTable("trans");
 
-    console.log(`Added transition region at center: ${regionStart} to ${regionEnd}`);
     // finalizeTimestamps("transition");
 }
+
 
 function delete_transitions() {
     // Toggle delete mode for transitions
@@ -3661,7 +3845,13 @@ function delete_transitions() {
 // }
 
 
-function refreshTable(new_type) {
+function refreshTable(new_type, transitionData = {}) {
+    console.log("refreshTable existingTransitionValues: ", existingTransitionValues)
+    if(new_type == "load"){
+        console.log("refreshTable existingTransitionValues 0.5: ", existingTransitionValues)
+        // finalizeTimestamps("transition", -1, -1);
+        return
+    }
     if (tablemade) {
 
         const allRegions = Object.values(waveform.regions.list);
@@ -3673,6 +3863,8 @@ function refreshTable(new_type) {
         console.log("NEW SIG: ", newsigPoints);
         let newRegionIndex_trans = 't';
         let newRegionIndex_form = 'f';
+        console.log("refreshTable existingTransitionValues 2: ", existingTransitionValues)
+
 
         if (new_type === "trans") {
             console.log("Transition")
@@ -3691,10 +3883,15 @@ function refreshTable(new_type) {
             newRegionIndex_form = handleRegionChanges(greenRegions, updatedGreenRegions, existingValues, "form");
             updatedGreenRegions = greenRegions;
         }
+        console.log("refreshTable existingTransitionValues 3: ", existingTransitionValues)
 
 
-        const audioDuration = waveform.getDuration();
-        finalizeTimestamps("time", newRegionIndex_form, newRegionIndex_trans);
+        if(new_type == "2D" || new_type == "3D"){
+            finalizeTimestamps(new_type, newRegionIndex_form, newRegionIndex_trans,transitionData);
+        }else{
+            const audioDuration = waveform.getDuration();
+            finalizeTimestamps("time", newRegionIndex_form, newRegionIndex_trans, transitionData);
+        }
     }
 }
 
@@ -3846,51 +4043,49 @@ function showSignificantPoints() {
     });
 }
 
-
-
-
-
-// function getLyrics() {
-//     const fileInput = document.getElementById('audioFile');
-//     if (fileInput.files.length === 0) {
-//         alert("Please select an audio file first.");
-//         return;
-//     }
-
-//     const formData = new FormData();
-//     formData.append('audioFile', fileInput.files[0]);
-
-//     fetch('/upload_audio', {
-//         method: 'POST',
-//         body: formData
-//     })
-//         .then(response => response.json())
-//         .then(data => {
-//             if (data.success) {
-//                 document.getElementById('outputContainer').textContent = JSON.stringify(data.output, null, 2);
-//                 lowEnergyBeats = data.low_energy_timestamps; // Update the global variable
-//                 // console.log("LOW ENERGY: " + lowEnergyBeats); // Log for debugging
-//                 updateUIWithLowEnergyBeats(); // Example function call
-//             } else {
-//                 document.getElementById('outputContainer').textContent = 'Error: ' + data.error;
-//             }
-//         })
-//         .catch(error => {
-//             console.error('Error:', error);
-//             document.getElementById('outputContainer').textContent = 'Failed to fetch data.';
-//         });
-// }
-
 function toggleMotion() {
     const button = document.getElementById("toggleMotionButton");
     if (button.textContent === "3D Motion") {
         button.textContent = "2D Motion";
         motion_mode = "2D";
+        console.log("toggle 3d to 2d")
+        Object.keys(existingValues).forEach(key => {
+            const valuesArray = existingValues[key];
+            if (valuesArray && valuesArray.length >= 2) {
+                const index = valuesArray.length - 2;
+                const value = valuesArray[index];
+                console.log("toggle val form: ", value);
+                if (value.startsWith("rotate_c")) {
+                    valuesArray[index] = value.replace("rotate_c", "spin_c");
+                } else if (value.startsWith("rotate")) {
+                    valuesArray[index] = value.replace("rotate", "pan");
+                }
+            }
+        });
+
+        // Refresh the table or UI to reflect the changes
+        refreshTable("2D");
         // Add code here to handle the change to 3D motion
         // console.log("Switched to 2D Motion");
     } else {
         button.textContent = "3D Motion";
         motion_mode = "3D";
+
+        console.log("toggle 3d to 2d")
+        Object.keys(existingValues).forEach(key => {
+            const valuesArray = existingValues[key];
+            if (valuesArray && valuesArray.length >= 2) {
+                const index = valuesArray.length - 2;
+                const value = valuesArray[index];
+                console.log("toggle val form: ", value);
+                if (value.startsWith("spin")) {
+                    valuesArray[index] = value.replace("spin", "rotate");
+                } else if (value.startsWith("pan")){
+                    valuesArray[index] = value.replace("pan", "rotate");
+                }
+            }
+        });
+        refreshTable("3D");
         // Add code here to handle the change to 2D motion
         // console.log("Switched to 3D Motion");
     }
@@ -3899,4 +4094,278 @@ function toggleMotion() {
 function toggle_suggest() {
     const suggestionsContent = document.getElementById('suggestionsContent');
     suggestionsContent.classList.toggle('hidden');
+}
+
+// Functions to save and load JSON files
+
+function getwaveformData(){
+    let allRegions = Object.values(waveform.regions.list);
+    let orangeRegions = allRegions.filter(region => region.color === 'rgba(255, 165, 0, 0.5)');
+    // Extract start and end times
+    let orangeIntervals = orangeRegions.map(region => ({
+        start: parseFloat(region.start.toFixed(2)), // Round to 2 decimal places
+        end: parseFloat(region.end.toFixed(2))     // Round to 2 decimal places
+    }));
+
+    
+    let greenRegions = allRegions.filter(region => region.color === 'green').sort((a, b) => a.start - b.start);
+    greenIntervals = greenRegions.map(r => r.start);
+    
+    return {"form": greenIntervals, "trans": orangeIntervals};    
+
+}
+
+function gettableData(){
+    const formData = gatherFormData();
+    const transitionsData = gatherTransitionData(formData);
+    return {"form" : formData, "trans": transitionsData};
+}
+
+function saveState() {
+    // Gather data
+    let waveData = getwaveformData();
+    let tableData = gettableData();
+    const vibeInput = document.getElementById("vibeInput").value;
+    const colorInput = document.getElementById("colorInput").value;
+    const imageryInput = document.getElementById("imageryInput").value;
+    const textureInput = document.getElementById("textureInput").value;
+    console.log("SAVE STATE METADATA: ", selectedFile.name, vibeInput, textureInput, colorInput, imageryInput)
+    const state = {
+        intervalTimes: waveData.form,
+        transitionTimes: waveData.trans,      
+        formData: tableData.form,
+        transitionData: tableData.trans,
+        fileName: selectedFile.name,
+        vibeInput: vibeInput,
+        colorInput: colorInput,
+        imageryInput: imageryInput,
+        textureInput: textureInput
+    };
+    console.log("State: ", state)
+
+    // Create a downloadable JSON file
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    // Create a temporary download link
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'waveform_table_state.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Clean up the object URL
+    URL.revokeObjectURL(url);
+}
+
+function promptAndLoadState() {
+    // Create a file input element
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'application/json';
+
+    fileInput.onchange = event => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+
+            // Read the file content
+            reader.onload = e => {
+                try {
+                    const jsonData = JSON.parse(e.target.result);
+
+                    // Validate JSON structure
+                    if (validateJsonState(jsonData)) {
+                        console.log("json data: ", jsonData);
+                        loadState(jsonData); // Load the state if validation passes
+                        alert(`Waveform state loaded successfully for ${jsonData.fileName}!`);
+                        if (jsonData.fileName != selectedFile.name){
+                            alert(`Song and json file name mismatch. Uploaded song: ${selectedFile.name}. Json data: ${jsonData.fileName}!`);
+                        }
+                    } else {
+                        alert("Invalid JSON file. Please upload a valid state file.");
+                    }
+                } catch (error) {
+                    alert("Failed to parse JSON. Please upload a valid JSON file.");
+                    console.error("Error parsing JSON:", error);
+                }
+            };
+
+            reader.readAsText(file);
+        }
+    };
+
+    // Trigger file input click
+    fileInput.click();
+}
+
+function validateJsonState(jsonData) {
+    // Ensure the JSON contains valid keys with expected structures
+    const hasIntervalTimes = Array.isArray(jsonData.intervalTimes);
+    const hasTransitionTimes = Array.isArray(jsonData.transitionTimes);
+
+    const validIntervals = hasIntervalTimes 
+        ? jsonData.intervalTimes.every(interval => 
+            typeof interval.start === 'number' && typeof interval.end === 'number'
+        )
+        : false;
+
+    const validTransitions = hasTransitionTimes 
+        ? jsonData.transitionTimes.every(transition => 
+            typeof transition.start === 'number' && typeof transition.end === 'number'
+        )
+        : false;
+
+    return validIntervals || validTransitions; // At least one of them must be valid
+}
+
+function clearColorRegions(waveform, colorsToRemove) {
+    if (!waveform || !waveform.regions) return;
+
+    Object.keys(waveform.regions.list).forEach(regionId => {
+        const region = waveform.regions.list[regionId];
+
+        // Check if the region's color matches one of the colors to remove
+        if (colorsToRemove.includes(region.color)) {
+            region.remove(); // Remove the region
+        }
+    });
+}
+
+
+function loadState(jsonData) {
+    const { intervalTimes, transitionTimes , formData, transitionData} = jsonData;
+    console.log("form and transdata: ", formData);
+    initializeWaveform(intervalTimes, transitionTimes)
+    if (formData || transitionData) {
+        console.log("enter table init section")
+        initializeTable(jsonData);
+    }
+
+    console.log("Waveform reinitialized with saved state.");
+}
+
+
+// Mock functions for reinitializing waveform and table
+function initializeWaveform(intervalTimes, transitionTimes) {
+    const waveformContainer = document.getElementById('waveform');
+    newsigPoints = intervalTimes;
+    tablemade = false;
+    if (!waveform || waveformContainer.style.display === 'none') {
+        // Create a new WaveSurfer instance if one doesn't exist
+        waveform = WaveSurfer.create({
+            container: '#waveform',
+            height: 256,
+            waveColor: 'rgb(200, 0, 200)',
+            progressColor: 'rgb(100, 0, 100)',
+            plugins: [
+                WaveSurfer.regions.create() // Initialize the Regions plugin
+            ],
+        });
+    } else {
+        // Clear existing regions if a waveform already exists
+        // waveform.clearRegions();
+        const greenColor = 'green';
+        const orangeColor = 'rgba(255, 165, 0, 0.5)';
+
+        // Clear existing green and orange regions
+        clearColorRegions(waveform, [greenColor, orangeColor]);
+        
+    }
+
+    
+    // Add regions for intervalTimes (green regions)
+    if (intervalTimes) {
+        setupRegions(waveform, intervalTimes, 'Significant Points', 'green', 0.25, true);
+
+    }
+    
+
+    // Add regions for transitionTimes (orange regions)
+    if (transitionTimes) {
+        transitionTimes.forEach(transition => {
+            const reg = waveform.addRegion({
+                start: transition.start,
+                end: transition.end,
+                color: 'rgba(255, 165, 0, 0.5)', // Orange
+                drag: true,
+                resize: true
+            });
+            reg.on('update-end', () => refreshTable("trans"));
+            reg.on('remove', () => refreshTable("trans"));
+            console.log("add transition region len idx: ", Object.keys(existingTransitionValues).length)
+            refreshTable("trans");
+        });
+    }
+
+}
+
+function initializeTable(jsonData) {
+    const { intervalTimes, transitionTimes , formData, transitionData, songname, vibeInput, colorInput, imageryInput, textureInput} = jsonData;
+    console.log('Initializing table with data:', formData, transitionData);
+    console.log("initialize table metadata: ", songname, vibeInput, colorInput, imageryInput, textureInput)
+    // essentially do the reverse of clearExistingData + reinitialize all data structs
+    
+    
+
+    // refreshTable();
+    show_transitions();
+    show_default_boxes(vibeInput, colorInput, imageryInput, textureInput); 
+    show_brainstorming();
+
+    refreshTable("form");
+    refreshTable("trans");
+    fillDefaultsTemp(true);
+    existingValues = {};
+    existingTransitionValues = {};
+
+    // Process formData
+    let index = 0;
+    for (const time in formData) {
+        console.log("time: ", time)
+        if (formData.hasOwnProperty(time)) {
+            const item = formData[time];
+            existingValues[index] = [
+                item.vibe,
+                item.imagery,
+                item.texture,
+                item.style,
+                item.color,
+                item.motion,
+                item.strength
+            ];
+            index++;
+        }
+    }
+
+    // Process transitionData
+    // index = 0;
+    // // let tmpDict = {}
+    // const transitionKeys = Object.keys(transitionData).reverse(); // Reverse the keys
+    // for (const interval of transitionKeys) {
+    //     // console.log("transitionData: ", transitionData)
+    //     // console.log("transitionData val: ", transitionData[interval])
+    //     console.log("INTERVAL:", interval);
+    //     if (transitionData.hasOwnProperty(interval)) {
+    //         const item = transitionData[interval];
+    //         console.log("index, ITEM:", index, item['motion'],item['strength']);
+    //         existingTransitionValues[index] = [
+    //             item['motion'],
+    //             item['strength']
+    //         ];
+    //         console.log("Added to existing trans vals:", existingTransitionValues);
+    //         index++;
+    //     }
+    // }
+    // // existingTransitionValues = tmpDict;
+    // console.log("existingValues after load: ", existingValues)
+    // console.log("existingTransValues after load: ", existingTransitionValues)
+    // // refreshTable("load");
+    // console.log("transition data sent in: ", transitionData);
+    refreshTable("none", transitionData);
+    // refreshTable("trans");
+
+   
+
 }

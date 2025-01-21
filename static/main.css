@@ -864,4 +864,48 @@ select {
     border: 5px solid red
 }
 
+/* For images */
 
+.recent-images {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 5px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+}
+
+.recent-images img {
+    margin: 5px;
+    border-radius: 10px;
+    max-height: 200px;
+    cursor: grab;
+    
+}
+
+.recent-images img:active {
+    cursor: grabbing;
+}
+
+.image-item {
+    position: relative;
+    width: 150px;
+    height: 150px;
+}
+
+.image-prompt {
+    font-size: 14px;
+    margin-top: 5px;
+    color: #555;
+    word-wrap: break-word;
+    text-align: center;
+    overflow-wrap: anywhere;
+    /* position: absolute;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    font-size: 12px;
+    padding: 5px;
+    margin: 0; */
+}

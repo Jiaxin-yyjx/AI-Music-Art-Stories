@@ -19,9 +19,22 @@
 
 </br>
 <!-- <input type="password" id="api_key" placeholder="Enter API Key"> -->
-<input type="text" id="api_key" placeholder="Enter API Key">
+<!-- <input type="text" id="api_key" placeholder="Enter API Key">
 
-<button onclick="sendApiKey()">Save</button>
+<button onclick="sendApiKey()">Save</button> -->
+<div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+    <!-- Existing items -->
+    <div>
+        <input type="text" id="api_key" placeholder="Enter API Key">
+        <button onclick="sendApiKey()">Save Key</button>
+    </div>
+
+    <!-- New buttons -->
+    <div style="display: flex;">
+        <button id="saveState" onclick="saveState()" style="display: none;" >Save State</button>
+        <button id="loadState" onclick="promptAndLoadState()" style="display: none;" >Load State</button>
+    </div>
+</div>
 <div id="headers" style="display: flex; flex-wrap: wrap; gap: 10px;">
     <input type="file" id="audioFile" accept=".m4a, .mp3, .wav" disabled>
     <button id="addNewInterval" style="display: none;" onclick="addNewInterval()">Add Interval</button>
@@ -229,7 +242,7 @@
                 </div>
             </div>
             <hr>
-            <button id="fill-defaults" style="display: none;" onclick="fillDefaultsTemp()">Fill With Defaults</button>
+            <button id="fill-defaults" style="display: none;" onclick="fillDefaultsTemp(false);">Fill With Defaults</button>
 
 
         </div>
@@ -250,6 +263,10 @@
             </select>
 
             <div class="image-container" id="image-container"></div>
+            <br>
+            <h3>Previously Generated Images</h3>
+            <div id="recent-images-container" class="recent-images">
+            </div>
         </div>
     </div>
 
@@ -277,6 +294,7 @@
                 </div>
                 <img id="generated-image" src="" alt="Your Generated Image" class="img-fluid" style="display: none;">
             </div>
+
         </div>
         <div class="col">
             <h3 style="margin-bottom: 10px;">Initial Image</h3>

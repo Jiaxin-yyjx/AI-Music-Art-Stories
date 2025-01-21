@@ -16,12 +16,12 @@ import cloudinary.uploader
 
 CLOUDINARY_URL = 'cloudinary://851777568929886:GJN-qDx1C7idDTO4SZ92FuD3mI0@hqxlqewng'
 cloudinary.config(
-    cloud_name=os.environ['CLOUDINARY_URL'].split('@')[1],
-    api_key=os.environ['CLOUDINARY_URL'].split(':')[1][2:],
-    api_secret=os.environ['CLOUDINARY_URL'].split(':')[2].split('@')[0],
-    # cloud_name=CLOUDINARY_URL.split('@')[1],
-    # api_key=CLOUDINARY_URL.split(':')[1][2:],
-    # api_secret=CLOUDINARY_URL.split(':')[2].split('@')[0],
+    # cloud_name=os.environ['CLOUDINARY_URL'].split('@')[1],
+    # api_key=os.environ['CLOUDINARY_URL'].split(':')[1][2:],
+    # api_secret=os.environ['CLOUDINARY_URL'].split(':')[2].split('@')[0],
+    cloud_name=CLOUDINARY_URL.split('@')[1],
+    api_key=CLOUDINARY_URL.split(':')[1][2:],
+    api_secret=CLOUDINARY_URL.split(':')[2].split('@')[0],
 )
 
 load_dotenv()
@@ -80,6 +80,28 @@ def upload_image():
 
     # Return the static URL
     return jsonify({"url": result['secure_url']})
+
+@app.route("/get_recent_images", methods=["GET"])
+def get_recent_images():
+    try:
+        # Get the 5 most recent image URLs from Redis
+        image_keys = redis_conn.keys("image:*")  # Assuming keys are like "image:<timestamp>"
+        sorted_image_keys = sorted(image_keys, key=lambda k: float(k.decode().split(":")[1].split('.')[0]), reverse=True)
+        recent_images = []
+
+        # Fetch details for the 5 most recent images
+        for key in sorted_image_keys[:10]:
+            print("key: ", key.decode())
+            image_url = redis_conn.get(key).decode("utf-8")
+            image_metadata = redis_conn.hgetall(f"image_metadata:{key.decode().split('.')[-1]}")
+            prompt = image_metadata.get(b'prompt', b'No prompt').decode('utf-8')
+            recent_images.append({'url': image_url, 'prompt': prompt})
+
+        return jsonify({'status': 'success', 'images': recent_images})
+
+    except Exception as e:
+        print(f"Error fetching recent images: {str(e)}")
+        return jsonify({'status': 'error', 'error': str(e)})
 
 # motion_magnitudes = {
 #     "zoom_in": {"none": 1.00, "weak": 1.02, "normal": 1.04, "strong": 10, "vstrong": 20},
@@ -345,6 +367,7 @@ def generate_initial():
         data['api_key'] = os.getenv("LAB_DISCO_API_KEY")
     print("API TOKEN? api_key,", api_key,". environ: ",  os.getenv("LAB_DISCO_API_KEY"), ". redis: ", redis_conn.get("api_key").decode('utf-8'))
     print("API KEY ACTUALLY PASSED? ", data['api_key'])
+    
 
     if not prompt:
         return jsonify({'error': 'No prompt provided'}), 400
@@ -587,7 +610,7 @@ def is_valid_strength_expression(expression):
 def parse_input_data(form_data, trans_data, song_duration):
     trans_data = {k: v for k, v in trans_data.items() if v.get('transition', True)}
     scene_change_times = sorted(list(map(float, form_data.keys())))
-    print("scene times and trans", scene_change_times, trans_data)
+    print("scene times and trans app.py", scene_change_times, trans_data)
     
     # Create the combined list of transition times
     transition_times = list(map(float, [time.split('-')[0] for time in trans_data.keys()] + 
@@ -1305,8 +1328,11 @@ def check_job_status(job_id):
     status = job.get_status()
     print("status: ", status)
     
+    if status == 'failed':
+        error_message = job.meta.get('error', 'An unknown error occurred.')
+        return jsonify({"job_id": job_id, "status": "failed", "error": error_message}), 400
     # Check if the job is finished
-    if status == 'finished':
+    elif status == 'finished':
         # Optionally, you can return the result of the job
         return jsonify({"job_id": job_id, "status": "finished", "result": job.result}), 200
     else:
