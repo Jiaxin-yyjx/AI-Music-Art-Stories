@@ -31,7 +31,7 @@
 
     <!-- New buttons -->
     <div style="display: flex;">
-        <button id="saveState" onclick="saveState()" style="display: none;" >Save State</button>
+        <!-- <button id="saveState" onclick="saveState()" style="display: none;" >Save State</button> -->
         <button id="loadState" onclick="promptAndLoadState()" style="display: none;" >Load State</button>
     </div>
 </div>
@@ -336,10 +336,13 @@
     <button type="submit">Upload</button>
 </form> -->
 <!-- <button id="submitSelectedImage">Submit Selected Image</button> -->
+<button id="saveState" onclick="saveState()" style="display: none;" >Save State</button>
+
 <div id="process-table" style="display:none;">
     <button id="process-table" style="display:inline-block;" onclick="processTable()">Create Video</button>
     <input type="number" id="seed" step="1" style="display:inline-block;" placeholder="Seed. Default: 868591112">
 </div>
+
 <div id="processing" style="display: none;">
     <!-- <div id="loadingIndicator_process">
         <img width="auto" height="200" src="./static/loading.gif" alt="Loading..." />

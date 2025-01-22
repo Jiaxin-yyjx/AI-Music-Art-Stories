@@ -99,8 +99,17 @@ $(document).ready(function () {
             url: `/check-job-status/${jobId}`,
             type: 'GET',
             success: function (response) {
-                console.log("Generate image status: ", response.status)
-                console.log("Job: ", response)
+                if(response.status == "started"){
+                    console.log("Generate Image Status: in progress");
+                    let responseTmp = response;
+                    responseTmp.status = "in progress"
+                    console.log("Job Details: ", responseTmp)
+
+                } else{
+                    console.log("Generate Image Status: ", response.status)
+                    console.log("Job Details: ", response)
+                }
+                
                 if (response.status === 'finished') {
                     if (response.result.error) {
                         $('#loading-indicator').hide();

@@ -1326,7 +1326,10 @@ def check_job_status(job_id):
     
     # Get the job's status
     status = job.get_status()
-    print("status: ", status)
+    if status == "started":
+       print("Job Status: in progress")
+    else: 
+        print("Job Status: ", status)
     
     if status == 'failed':
         error_message = job.meta.get('error', 'An unknown error occurred.')

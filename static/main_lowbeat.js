@@ -1318,6 +1318,7 @@ function fillDefaultsTemp(load = false) {
     const textureInput = document.getElementById("textureInput");
     const trash = document.getElementById("trash");
     const processButton = document.getElementById("process-table")
+    const saveState = document.getElementById("saveState")
     const seed = document.getElementById("seed")
 
 
@@ -1344,6 +1345,7 @@ function fillDefaultsTemp(load = false) {
     
     processButton.style.display = "block";
     seed.style.display = "inline-block";
+    saveState.style.display = "block";
 }
 
 function fillDefaults() {
@@ -1814,7 +1816,8 @@ function checkJobStatus(jobId) {
         })
         .then(response => response.json())
         .then(statusData => {
-            console.log('Job status:', statusData);
+            
+            console.log('Job Status:', statusData);
             
             // If the job is finished
             if (statusData.status === 'finished') {
@@ -2425,7 +2428,7 @@ function processAudio() {
     // const slider = document.getElementById("slider")
     const loadingIndicator = document.getElementById("loadingIndicator");
     const loadState = document.getElementById("loadState");
-    const saveState = document.getElementById("saveState");
+    // const saveState = document.getElementById("saveState");
     audioZoom(); // Function to set all the zooom stuff up
 
 
@@ -2435,7 +2438,7 @@ function processAudio() {
     play_buttons_box.style.display = "flex"
     loadingIndicator.style.display = "block";
     loadState.style.display = "block";
-    saveState.style.display = "block";
+    // saveState.style.display = "block";
 
     // const clearButton = document.getElementById('clearButton');
 
