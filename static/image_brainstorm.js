@@ -18,7 +18,7 @@ $(document).ready(function () {
                     imagesContainer.empty(); // Clear any existing images
 
                     response.images.forEach(image => {
-                        
+
                         const imageElement = $('<div class="img-wrapper"></div>');
                         const img = $('<img src="' + image.url + '" alt="Generated Image" class="img">');
                         const prompt = $('<p class="image-prompt">Prompt: ' + image.prompt + '</p>');
@@ -31,18 +31,41 @@ $(document).ready(function () {
                         // Make the image draggable
                         img.on('mousedown', function (event) {
                             const $image = $(this);
+                            let initialPosition = $image.position();
                             let offsetX = event.clientX - $image.position().left;
                             let offsetY = event.clientY - $image.position().top;
 
                             $(document).on('mousemove.draggable', function (event) {
                                 $image.css({
+                                    position: 'absolute', // Ensure the image is draggable
                                     left: event.clientX - offsetX,
-                                    top: event.clientY - offsetY
+                                    top: event.clientY - offsetY,
+                                    zIndex: 1000, // Bring the dragged image to the front
                                 });
                             });
 
                             $(document).on('mouseup.draggable', function () {
                                 $(document).off('.draggable');
+
+                                // Check if the image is dropped in the drop area
+                                const dropArea = $('#drop-area')[0].getBoundingClientRect();
+                                const imageRect = $image[0].getBoundingClientRect();
+
+                                const isDroppedInArea =
+                                    imageRect.left >= dropArea.left &&
+                                    imageRect.right <= dropArea.right &&
+                                    imageRect.top >= dropArea.top &&
+                                    imageRect.bottom <= dropArea.bottom;
+
+                                if (!isDroppedInArea) {
+                                    // Reset the image to its original position
+                                    $image.css({
+                                        position: 'relative',
+                                        left: initialPosition.left,
+                                        top: initialPosition.top,
+                                        zIndex: 0, // Reset zIndex
+                                    });
+                                }
                             });
                         });
 
@@ -99,24 +122,24 @@ $(document).ready(function () {
             url: `/check-job-status/${jobId}`,
             type: 'GET',
             success: function (response) {
-                if(response.status == "started"){
+                if (response.status == "started") {
                     console.log("Generate Image Status: in progress");
                     let responseTmp = response;
                     responseTmp.status = "in progress"
                     console.log("Job Details: ", responseTmp)
 
-                } else{
+                } else {
                     console.log("Generate Image Status: ", response.status)
                     console.log("Job Details: ", response)
                 }
-                
+
                 if (response.status === 'finished') {
                     if (response.result.error) {
                         $('#loading-indicator').hide();
                         console.log("error: ", response.result.error);
                         alert(`Error: ${response.result.error}. Check API dashboard and try again.`);
                         return; // Exit the function to prevent further processing
-                    }else{
+                    } else {
                         $('#loading-indicator').hide();
                         // Job completed, show the generated image
                         $('#generated-image').attr('src', response.result.output).show();
@@ -157,47 +180,3 @@ $(document).ready(function () {
         });
     });
 });
-
-// $(document).ready(function () {
-//     $('#image-form').on('submit', function (event) {
-//         event.preventDefault();
-//         let prompt = $('#prompt').val();
-
-//         // Show loading indicator and hide generated image
-//         $('#loading-indicator').show();
-//         $('#generated-image').hide();
-
-//         $.ajax({
-//             url: '/generate_initial',
-//             type: 'POST',
-//             contentType: 'application/json',
-//             data: JSON.stringify({ prompt: prompt }),
-//             success: function (response) {
-//                 // Hide loading indicator and show generated image
-//                 $('#loading-indicator').hide();
-//                 $('#generated-image').attr('src', response.output).show();
-//             },
-//             error: function (xhr, status, error) {
-//                 console.error('Error:', error);
-//                 $('#loading-indicator').hide();
-//             }
-//         });
-//     });
-//     // Make the image draggable
-//     $('#output-container').on('mousedown', '#generated-image', function (event) {
-//         let $image = $(this);
-//         let offsetX = event.clientX - $image.position().left;
-//         let offsetY = event.clientY - $image.position().top;
-
-//         $(document).on('mousemove.draggable', function (event) {
-//             $image.css({
-//                 left: event.clientX - offsetX,
-//                 top: event.clientY - offsetY
-//             });
-//         });
-
-//         $(document).on('mouseup.draggable', function () {
-//             $(document).off('.draggable');
-//         });
-//     });
-// });

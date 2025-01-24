@@ -4,7 +4,7 @@ import os
 import librosa
 import numpy as np
 import tempfile
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, send_file
 import replicate
 from dotenv import load_dotenv
 from tasks import long_running_task, process_audio, generate_image_task
@@ -13,6 +13,9 @@ from flask_cors import CORS
 from datetime import datetime
 import cloudinary
 import cloudinary.uploader
+
+from moviepy.editor import VideoFileClip, AudioFileClip
+import uuid
 
 CLOUDINARY_URL = 'cloudinary://851777568929886:GJN-qDx1C7idDTO4SZ92FuD3mI0@hqxlqewng'
 cloudinary.config(
@@ -1373,7 +1376,68 @@ def process_data():
     # Respond immediately with the job ID
     return jsonify({"job_id": job.get_id(), "status": "queued"}), 202
 
+# Video + Audio Backend Code
+# Path to save uploaded files and processed videos
+UPLOAD_FOLDER = './uploads'
+PROCESSED_FOLDER = './processed'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(PROCESSED_FOLDER, exist_ok=True)
 
+@app.route('/combine_audio_video', methods=['POST'])
+def combine_audio_video():
+    try:
+        # Check if the required parameters are provided
+        if 'audio' not in request.files or 'video_url' not in request.form:
+            return jsonify({'error': 'Audio file and video URL are required'}), 400
+
+        # Save the audio file
+        audio_file = request.files['audio']
+        audio_path = os.path.join(UPLOAD_FOLDER, f"{uuid.uuid4()}_{audio_file.filename}")
+        audio_file.save(audio_path)
+
+        # Download the video from the provided URL
+        video_url = request.form['video_url']
+        video_filename = f"{uuid.uuid4()}_video.mp4"
+        video_path = os.path.join(UPLOAD_FOLDER, video_filename)
+
+        response = requests.get(video_url, stream=True)
+        if response.status_code == 200:
+            with open(video_path, 'wb') as video_file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    video_file.write(chunk)
+        else:
+            return jsonify({'error': f"Failed to download video from URL: {video_url}"}), 400
+
+        # Combine audio and video using moviepy
+        video_clip = VideoFileClip(video_path)
+        audio_clip = AudioFileClip(audio_path)
+
+        # Set the audio of the video
+        video_with_audio = video_clip.set_audio(audio_clip)
+
+        # Save the output video
+        output_filename = f"{uuid.uuid4()}_output_video.mp4"
+        output_path = os.path.join(PROCESSED_FOLDER, output_filename)
+        video_with_audio.write_videofile(output_path, codec="libx264", audio_codec="aac")
+
+        # Cleanup: Close the clips
+        video_clip.close()
+        audio_clip.close()
+
+        return jsonify({'url': f'/download/{output_filename}'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/download/<filename>', methods=['GET'])
+def download_file(filename):
+    try:
+        filepath = os.path.join(PROCESSED_FOLDER, filename)
+        if not os.path.exists(filepath):
+            return jsonify({'error': 'File not found'}), 404
+        return send_file(filepath, as_attachment=True)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
 if __name__ == "__main__":
     # app.run(debug=True)
     port = int(os.environ.get("PORT", 5004))
