@@ -93,7 +93,7 @@ const images = {
     ]
 };
 
-window.onload = function() {
+window.onload = function () {
     const storedKey = localStorage.getItem('api_key');
     if (storedKey) {
         document.getElementById('stored_key').innerText = storedKey;
@@ -523,8 +523,8 @@ function finalizeTimestamps(name, regionIndex_form, regionIndex_trans, transitio
 
     // Convert to numbers, add boundaries, and sort
     const timestamps = [0, ...roundedSignificantPoints, audioDuration.toFixed(2)]
-    .map(Number)
-    .sort((a, b) => a - b);
+        .map(Number)
+        .sort((a, b) => a - b);
 
     console.log("TIMESTAMP: ", timestamps);
     const sectionsCount = newsigPoints.length;
@@ -619,7 +619,7 @@ function finalizeTimestamps(name, regionIndex_form, regionIndex_trans, transitio
 
 
 
-    
+
     container.innerHTML = ''; // Clear previous content
     container.style.setProperty('--sections-count', sectionsCount);
 
@@ -860,7 +860,7 @@ function finalizeTimestamps(name, regionIndex_form, regionIndex_trans, transitio
             existingTransitionValues[regionIndex_trans] = ['', ''];
             // console.log("existingTransitionValues after: ", existingTransitionValues);
         } else if (regionIndex_trans < 0) {
-            
+
             const trans_idx = Object.keys(existingTransitionValues).length + regionIndex_trans;
             delete existingTransitionValues[trans_idx];
             existingTransitionValues = Object.keys(existingTransitionValues)
@@ -1106,7 +1106,7 @@ function addTransitions(id, startTime, endTime, i, existingTransitionValues, reg
     // console.log("AddTrans2 called");
     const formContainers = document.querySelectorAll('.section');
     // console.log("formcontainer: ", formContainers)
-    if (name == "2D"){
+    if (name == "2D") {
         console.log("enter addTransition for 2D motion toggle")
         // Update the first item in each sub-array of existingTransitionValues
         Object.keys(existingTransitionValues).forEach(key => {
@@ -1122,7 +1122,7 @@ function addTransitions(id, startTime, endTime, i, existingTransitionValues, reg
             }
         });
         // console.log("after change, exist trans in add trans: ", existingTransitionValues)
-    }else if (name == "3D"){
+    } else if (name == "3D") {
         console.log("enter addTransition for 3D motion toggle")
         // Update the first item in each sub-array of existingTransitionValues
         Object.keys(existingTransitionValues).forEach(key => {
@@ -1134,7 +1134,7 @@ function addTransitions(id, startTime, endTime, i, existingTransitionValues, reg
                     transitionArray[0] = value.replace("spin", "rotate");
                 } else if (value.startsWith("pan")) {
                     transitionArray[0] = value.replace("pan", "rotate");
-                } 
+                }
             }
         });
         // console.log("after change, exist trans in add trans: ", existingTransitionValues)
@@ -1271,7 +1271,7 @@ function addTransitions(id, startTime, endTime, i, existingTransitionValues, reg
                     // console.log("Blur: ", existingTransitionValues);
                 });
 
-                if (name == "2D"){
+                if (name == "2D") {
                     console.log("for name 2D check if conditions met: ", tablemade, Object.keys(existingTransitionValues).length)
                 }
                 if (tablemade && Object.keys(existingTransitionValues).length > 0) {
@@ -1289,7 +1289,7 @@ function addTransitions(id, startTime, endTime, i, existingTransitionValues, reg
                             console.log("INTERVAL:", interval);
                             if (transitionData.hasOwnProperty(interval)) {
                                 const item = transitionData[interval];
-                                console.log("index, ITEM:", index, item['motion'],item['strength']);
+                                console.log("index, ITEM:", index, item['motion'], item['strength']);
                                 existingTransitionValues[index] = [
                                     item['motion'],
                                     item['strength']
@@ -1336,13 +1336,13 @@ function fillDefaultsTemp(load = false) {
     const toggleButton = document.getElementById("toggleMotionButton");
     toggleButton.style.display = "block";
     trash.style.display = "flex";
-    if(load == true){
+    if (load == true) {
         console.log("DON'T FILL DEFAULTS");
-    }else{
+    } else {
         console.log("FILL DEFAULTS")
         fillDefaults();
     }
-    
+
     processButton.style.display = "block";
     seed.style.display = "inline-block";
     saveState.style.display = "block";
@@ -1597,7 +1597,7 @@ function validateInputs(motionInput, strengthInput, index) {
         alert(`Timestamp ${index + 1}: Invalid strength values: ${invalidStrengths.join(", ")}. Valid strengths: integers or mathematical functions like 10*sin(2*t/5).`);
         return false;
     }
-    
+
 
 
     return true;
@@ -1814,36 +1814,36 @@ function checkJobStatus(jobId) {
         fetch(`/check-job-status/${jobId}`, {
             method: 'GET',
         })
-        .then(response => response.json())
-        .then(statusData => {
-            
-            console.log('Job Status:', statusData);
-            
-            // If the job is finished
-            if (statusData.status === 'finished') {
+            .then(response => response.json())
+            .then(statusData => {
+
+                console.log('Job Status:', statusData);
+
+                // If the job is finished
+                if (statusData.status === 'finished') {
+                    loadingIndicator.style.display = 'none';
+                    console.log("FINISHED")
+                    clearInterval(interval);  // Stop polling
+
+                    // Process the result when the job is done
+                    handleJobResult(statusData);
+                }
+                else if (statusData.status === 'failed') {
+                    // If the job has failed, stop polling and display an error
+                    // loadingIndicator.style.display = 'none';
+                    // console.error("Job failed:", statusData.error || "Unknown error");
+                    // alert(`Job failed: ${statusData.error || "An unknown error occurred"}`);
+                    // clearInterval(interval); // Stop polling
+                    loadingIndicator.style.display = 'none';
+                    console.error("Job failed:", statusData.error);
+                    alert(`Job failed: ${statusData.error}`);
+                    clearInterval(interval); // Stop polling
+                }
+            })
+            .catch(error => {
                 loadingIndicator.style.display = 'none';
-                console.log("FINISHED")
-                clearInterval(interval);  // Stop polling
-                
-                // Process the result when the job is done
-                handleJobResult(statusData);
-            }
-            else if (statusData.status === 'failed') {
-                // If the job has failed, stop polling and display an error
-                // loadingIndicator.style.display = 'none';
-                // console.error("Job failed:", statusData.error || "Unknown error");
-                // alert(`Job failed: ${statusData.error || "An unknown error occurred"}`);
-                // clearInterval(interval); // Stop polling
-                loadingIndicator.style.display = 'none';
-                console.error("Job failed:", statusData.error);
-                alert(`Job failed: ${statusData.error}`);
-                clearInterval(interval); // Stop polling
-            }
-        })
-        .catch(error => {
-            loadingIndicator.style.display = 'none';
-            console.error('Error fetching job status:', error);
-        });
+                console.error('Error fetching job status:', error);
+            });
     }, 3000);  // 3000 ms = 3 seconds
 }
 
@@ -1870,7 +1870,7 @@ function handleJobResult(statusData) {
 // Build the HTML result
 function buildResultHTML(result) {
     let backgroundImageUrl = $('#img-view').css('background-image');
-    
+
     // Extract the URL (removes the `url("...")` part)
     backgroundImageUrl = backgroundImageUrl.replace(/^url\(["']?/, '').replace(/["']?\)$/, '');
 
@@ -1898,11 +1898,13 @@ function buildResultHTML(result) {
                <p><a href="${result.input_image_url}" target="_blank">Click here to view initial image</a></p>`;
 
     }
-    
+
 
     if (result.output_url) {
         resultHTML += `<h3>Output:</h3><p><a href="${result.output_url}" target="_blank">Click here to view output</a></p>`;
     }
+
+    // TODO: Place to put the url (video + audio version)
 
     return resultHTML;
 }
@@ -1937,7 +1939,7 @@ function processTable() {
 
     if (overlappingIntervals.length > 0) {
         // Format overlapping intervals for alert
-        const overlappingMessage = overlappingIntervals.map(interval => 
+        const overlappingMessage = overlappingIntervals.map(interval =>
             `Overlap detected between [${interval.currentStart}, ${interval.currentEnd}] and [${interval.nextStart}, ${interval.nextEnd}]`
         ).join('\n');
 
@@ -1957,7 +1959,7 @@ function processTable() {
         seed = 868591112; // Default value
     }
     let backgroundImageUrl = $('#img-view').css('background-image');
-    
+
     // Extract the URL (removes the `url("...")` part)
     backgroundImageUrl = backgroundImageUrl.replace(/^url\(["']?/, '').replace(/["']?\)$/, '');
 
@@ -1992,14 +1994,14 @@ function processTable() {
         .then(response => response.json())
         .then(data => {
             console.log('Job queued:', data);
-        
+
             // Store the job ID
             const jobId = data.job_id;
 
             // Call the function to check the job status
             checkJobStatus(jobId);
             console.log("done checking job status");
-            
+
         })
         .catch(error => {
             console.error('Error:', error);
@@ -2079,12 +2081,12 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log("file: " + audioFileInput)
     let fileSelected = false;
     selectedFile = null;
-    
+
     function validateApiKey() {
         // Get the value of the API key field
         const apiKey = document.getElementById("api_key").value;
         const fileInput = document.getElementById("audioFile");
-        
+
         if (apiKey === '') {
             alert("Please enter an API key");
             fileInput.disabled = true;  // Disable file input
@@ -2092,13 +2094,13 @@ document.addEventListener("DOMContentLoaded", function () {
             fileInput.disabled = false;  // Enable file input
         }
     }
-    
+
     // Call this function when the API key input changes
     document.getElementById("api_key").addEventListener("input", validateApiKey);
 
     // Listen for the file selection event
     audioFileInput.addEventListener('change', function (event) {
-        
+
         console.log("change")
         selectedFile = document.getElementById('audioFile').files[0];
         console.log(selectedFile)
@@ -2196,14 +2198,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
             options.forEach((option, index) => {
                 const optionValue = option.textContent.toLowerCase();
-                
+
                 if (optionValue.includes(inputValue)) {
                     if (bestMatchIndex === -1 || optionValue.indexOf(inputValue) < bestMatch.indexOf(inputValue)) {
                         bestMatch = optionValue;
                         bestMatchIndex = index;
                     }
                 }
-                
+
             });
 
             options.forEach((option, index) => {
@@ -2214,8 +2216,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     option.style.backgroundColor = ''; // Remove highlight from others
                 }
             });
-            
-            
+
+
         };
 
         // Show dropdown on input click
@@ -2242,7 +2244,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (e.target.tagName === 'LI') {
                 inputElement.value = e.target.textContent;
                 dropdown.style.display = 'none'; // Hide dropdown after selection
-                if (inputId === "colorInput"){
+                if (inputId === "colorInput") {
                     updateColorPickerFromInput();
                 }
             }
@@ -2419,7 +2421,7 @@ function audioZoom() {
 }
 
 function processAudio() {
-    
+
     tablemade = false;
     const fileInput = document.getElementById('audioFile');
     const play_button = document.getElementById("playPauseButton")
@@ -3546,7 +3548,7 @@ function addDefaultTransitions() {
     for (let i = 0; i < transitionRegions.length - 1; i++) {
         const current = transitionRegions[i];
         const next = transitionRegions[i + 1];
-        
+
 
         // If there's an overlap, shift the next region's start and end by 0.01
         if (current.end > next.start) {
@@ -3563,7 +3565,7 @@ function addDefaultTransitions() {
                 next.start = Math.max(next.start, waveformDuration - 2); // Adjust start if needed
             }
         }
-        
+
     }
 
     // Add the regions to the waveform
@@ -3620,7 +3622,7 @@ function addTransitionRegions() {
     const cursorTime = waveform.getCurrentTime(); // Get the current cursor position
     let regionStart = parseFloat((cursorTime - 0.5).toFixed(2));
     let regionEnd = parseFloat((cursorTime + 0.5).toFixed(2));
-    
+
     if (regionStart < 0) {
         regionStart = 0;
     }
@@ -3850,7 +3852,7 @@ function delete_transitions() {
 
 function refreshTable(new_type, transitionData = {}) {
     console.log("refreshTable existingTransitionValues: ", existingTransitionValues)
-    if(new_type == "load"){
+    if (new_type == "load") {
         console.log("refreshTable existingTransitionValues 0.5: ", existingTransitionValues)
         // finalizeTimestamps("transition", -1, -1);
         return
@@ -3889,9 +3891,9 @@ function refreshTable(new_type, transitionData = {}) {
         console.log("refreshTable existingTransitionValues 3: ", existingTransitionValues)
 
 
-        if(new_type == "2D" || new_type == "3D"){
-            finalizeTimestamps(new_type, newRegionIndex_form, newRegionIndex_trans,transitionData);
-        }else{
+        if (new_type == "2D" || new_type == "3D") {
+            finalizeTimestamps(new_type, newRegionIndex_form, newRegionIndex_trans, transitionData);
+        } else {
             const audioDuration = waveform.getDuration();
             finalizeTimestamps("time", newRegionIndex_form, newRegionIndex_trans, transitionData);
         }
@@ -4083,7 +4085,7 @@ function toggleMotion() {
                 console.log("toggle val form: ", value);
                 if (value.startsWith("spin")) {
                     valuesArray[index] = value.replace("spin", "rotate");
-                } else if (value.startsWith("pan")){
+                } else if (value.startsWith("pan")) {
                     valuesArray[index] = value.replace("pan", "rotate");
                 }
             }
@@ -4101,7 +4103,7 @@ function toggle_suggest() {
 
 // Functions to save and load JSON files
 
-function getwaveformData(){
+function getwaveformData() {
     let allRegions = Object.values(waveform.regions.list);
     let orangeRegions = allRegions.filter(region => region.color === 'rgba(255, 165, 0, 0.5)');
     // Extract start and end times
@@ -4110,18 +4112,18 @@ function getwaveformData(){
         end: parseFloat(region.end.toFixed(2))     // Round to 2 decimal places
     }));
 
-    
+
     let greenRegions = allRegions.filter(region => region.color === 'green').sort((a, b) => a.start - b.start);
     greenIntervals = greenRegions.map(r => r.start);
-    
-    return {"form": greenIntervals, "trans": orangeIntervals};    
+
+    return { "form": greenIntervals, "trans": orangeIntervals };
 
 }
 
-function gettableData(){
+function gettableData() {
     const formData = gatherFormData();
     const transitionsData = gatherTransitionData(formData);
-    return {"form" : formData, "trans": transitionsData};
+    return { "form": formData, "trans": transitionsData };
 }
 
 function saveState() {
@@ -4135,7 +4137,7 @@ function saveState() {
     console.log("SAVE STATE METADATA: ", selectedFile.name, vibeInput, textureInput, colorInput, imageryInput)
     const state = {
         intervalTimes: waveData.form,
-        transitionTimes: waveData.trans,      
+        transitionTimes: waveData.trans,
         formData: tableData.form,
         transitionData: tableData.trans,
         fileName: selectedFile.name,
@@ -4183,7 +4185,7 @@ function promptAndLoadState() {
                         console.log("json data: ", jsonData);
                         loadState(jsonData); // Load the state if validation passes
                         alert(`Waveform state loaded successfully for ${jsonData.fileName}!`);
-                        if (jsonData.fileName != selectedFile.name){
+                        if (jsonData.fileName != selectedFile.name) {
                             alert(`Song and json file name mismatch. Uploaded song: ${selectedFile.name}. Json data: ${jsonData.fileName}!`);
                         }
                     } else {
@@ -4208,14 +4210,14 @@ function validateJsonState(jsonData) {
     const hasIntervalTimes = Array.isArray(jsonData.intervalTimes);
     const hasTransitionTimes = Array.isArray(jsonData.transitionTimes);
 
-    const validIntervals = hasIntervalTimes 
-        ? jsonData.intervalTimes.every(interval => 
+    const validIntervals = hasIntervalTimes
+        ? jsonData.intervalTimes.every(interval =>
             typeof interval.start === 'number' && typeof interval.end === 'number'
         )
         : false;
 
-    const validTransitions = hasTransitionTimes 
-        ? jsonData.transitionTimes.every(transition => 
+    const validTransitions = hasTransitionTimes
+        ? jsonData.transitionTimes.every(transition =>
             typeof transition.start === 'number' && typeof transition.end === 'number'
         )
         : false;
@@ -4238,7 +4240,7 @@ function clearColorRegions(waveform, colorsToRemove) {
 
 
 function loadState(jsonData) {
-    const { intervalTimes, transitionTimes , formData, transitionData} = jsonData;
+    const { intervalTimes, transitionTimes, formData, transitionData } = jsonData;
     console.log("form and transdata: ", formData);
     initializeWaveform(intervalTimes, transitionTimes)
     if (formData || transitionData) {
@@ -4274,16 +4276,16 @@ function initializeWaveform(intervalTimes, transitionTimes) {
 
         // Clear existing green and orange regions
         clearColorRegions(waveform, [greenColor, orangeColor]);
-        
+
     }
 
-    
+
     // Add regions for intervalTimes (green regions)
     if (intervalTimes) {
         setupRegions(waveform, intervalTimes, 'Significant Points', 'green', 0.25, true);
 
     }
-    
+
 
     // Add regions for transitionTimes (orange regions)
     if (transitionTimes) {
@@ -4305,16 +4307,16 @@ function initializeWaveform(intervalTimes, transitionTimes) {
 }
 
 function initializeTable(jsonData) {
-    const { intervalTimes, transitionTimes , formData, transitionData, songname, vibeInput, colorInput, imageryInput, textureInput} = jsonData;
+    const { intervalTimes, transitionTimes, formData, transitionData, songname, vibeInput, colorInput, imageryInput, textureInput } = jsonData;
     console.log('Initializing table with data:', formData, transitionData);
     console.log("initialize table metadata: ", songname, vibeInput, colorInput, imageryInput, textureInput)
     // essentially do the reverse of clearExistingData + reinitialize all data structs
-    
-    
+
+
 
     // refreshTable();
     show_transitions();
-    show_default_boxes(vibeInput, colorInput, imageryInput, textureInput); 
+    show_default_boxes(vibeInput, colorInput, imageryInput, textureInput);
     show_brainstorming();
 
     refreshTable("form");
@@ -4369,6 +4371,6 @@ function initializeTable(jsonData) {
     refreshTable("none", transitionData);
     // refreshTable("trans");
 
-   
+
 
 }
