@@ -4274,11 +4274,14 @@ function saveState() {
     const imageView = document.getElementById('img-view');
     const style = getComputedStyle(imageView);
     const backgroundImage = style.backgroundImage;
-    const urlMatch = backgroundImage.match(/url\(["']?([^"']*)["']?\)/);
+    let urlMatch = backgroundImage.match(/url\(["']?([^"']*)["']?\)/);
+    console.log("url match: " + urlMatch);
 
     
     console.log("SAVE STATE METADATA: ", selectedFile.name, vibeInput, textureInput, colorInput, imageryInput, urlMatch)
+    
     const state = {
+        motion_mode_tmp: motion_mode,
         intervalTimes: waveData.form,
         transitionTimes: waveData.trans,      
         formData: tableData.form,
@@ -4288,7 +4291,7 @@ function saveState() {
         colorInput: colorInput,
         imageryInput: imageryInput,
         textureInput: textureInput,
-        imageLink: urlMatch[1]
+        imageLink: urlMatch
     };
     console.log("State: ", state)
 
@@ -4384,7 +4387,11 @@ function clearColorRegions(waveform, colorsToRemove) {
 
 
 function loadState(jsonData) {
-    const { intervalTimes, transitionTimes , formData, transitionData} = jsonData;
+    const {motion_mode_tmp, intervalTimes, transitionTimes , formData, transitionData} = jsonData;
+    motion_mode = motion_mode_tmp
+    console.log("motion_mode: ", motion_mode, motion_mode_tmp);
+    const button = document.getElementById("toggleMotionButton");
+    button.textContent = motion_mode_tmp + " Motion";
     console.log("form and transdata: ", formData);
     initializeWaveform(intervalTimes, transitionTimes)
     if (formData || transitionData) {

@@ -1,19 +1,21 @@
 
 motion_magnitudes = {
-    "zoom_in": {"none": 1.00, "weak": 1.02, "normal": 1.04, "strong": 1.3, "vstrong": 1.6},
+    "zoom_in": {"none": 1.00, "weak": 1.02, "normal": 1.04, "strong": 1.2, "vstrong": 1.6},
     "zoom_out": {"none": 1.00, "weak": 0.98, "normal": 0.96, "strong": 0.8, "vstrong": 0.6},
-    "rotate_up": {"none": 0, "weak": 0.5, "normal": 1, "strong": 3, "vstrong": 6},
-    "rotate_down": {"none": 0, "weak": -0.5, "normal": -1, "strong": -3, "vstrong": -6},
-    "rotate_right": {"none": 0, "weak": 0.5, "normal": 1, "strong": 3, "vstrong": 6},
-    "rotate_left": {"none": 0, "weak": -0.5, "normal": -1, "strong": -3, "vstrong": -6},
-    "rotate_cw": {"none": 0, "weak": 0.5, "normal": 1, "strong": 3, "vstrong": 6},
-    "rotate_ccw": {"none": 0, "weak": -0.5, "normal": -1, "strong": -3, "vstrong": -6},
-    "spin_cw": {"none": 0, "weak": 0.5, "normal": 1, "strong": 3, "vstrong": 6},
-    "spin_ccw": {"none": 0, "weak": -0.5, "normal": -1, "strong": -3, "vstrong": -6},
-    "pan_up": {"none": 0, "weak": 0.5, "normal": 1, "strong": 3, "vstrong": 6},
-    "pan_down": {"none": 0, "weak": -0.5, "normal": -1, "strong": -3, "vstrong": -6},
-    "pan_right": {"none": 0, "weak": 0.5, "normal": 1, "strong": 3, "vstrong": 6},
-    "pan_left": {"none": 0, "weak": -0.5, "normal": -1, "strong": -3, "vstrong": -6}
+
+    "rotate_up": {"none": 0, "weak": 0.5, "normal": 1, "strong": 2, "vstrong": 4},
+    "rotate_down": {"none": 0, "weak": -0.5, "normal": -1, "strong": -2, "vstrong": -4},
+    "rotate_right": {"none": 0, "weak": 0.5, "normal": 1, "strong": 2, "vstrong": 4},
+    "rotate_left": {"none": 0, "weak": -0.5, "normal": -1, "strong": -2, "vstrong": -4},
+    "rotate_cw": {"none": 0, "weak": 0.5, "normal": 2, "strong": 20, "vstrong": 40},
+    "rotate_ccw": {"none": 0, "weak": -0.5, "normal": -2, "strong": -20, "vstrong": -40},
+
+    "spin_cw": {"none": 0, "weak": -5, "normal": -10, "strong": -20, "vstrong": -30},
+    "spin_ccw": {"none": 0, "weak": 5, "normal": 10, "strong": 20, "vstrong": 30},
+    "pan_up": {"none": 0, "weak": 10, "normal": 15, "strong": 25, "vstrong": 40},
+    "pan_down": {"none": 0, "weak": -10, "normal": -15, "strong": -25, "vstrong": -40},
+    "pan_right": {"none": 0, "weak": -10, "normal": -15, "strong": -25, "vstrong": -40},
+    "pan_left": {"none": 0, "weak": 10, "normal": 15, "strong": 25, "vstrong": 40}
 }
 
 
@@ -47,6 +49,15 @@ def split_and_pair_values(data):
     paired_values = []
     for motion, strength in zip(motions, strengths):
         paired_values.append({'motion': motion.strip(), 'strength': strength.strip()})
+    print("before check zoom: ", paired_values)
+
+    has_spin_or_pan = any(motion_entry['motion'].startswith(('spin', 'pan')) for motion_entry in paired_values)
+    
+    # Check if any motion starts with "zoom"
+    has_zoom_motion = any(motion_entry['motion'].startswith('zoom') for motion_entry in paired_values)
+    if has_spin_or_pan and not has_zoom_motion:
+        paired_values.append({'motion': 'zoom_in', 'strength': '1.0'})
+    print("Paired vals split pair: ", paired_values)
 
     return paired_values
 
@@ -117,6 +128,7 @@ def get_motion_data(form_data, trans_data, time_intervals, interval_strings, sce
         print('Start time: ', start_time)
         print('end time: ', end_time)
         if end_time in start_times_trans:
+            # INDICATES THE START OF A TRANSITION
             print("end time in transition start times")
             in_transition = True
             closest_end = get_closest_form_data(end_time, form_data)
@@ -149,6 +161,7 @@ def get_motion_data(form_data, trans_data, time_intervals, interval_strings, sce
         #     print("end transition")
 
         if (start_time in time_intervals or start_time == '0.0') and end_time in time_intervals and start_time != end_time and in_transition == False:    
+            # Normal intervals
             print("normal time scene")
             motion_data.append(split_and_pair_values(form_data[str(end_time)]))
             print("SPLIT PAIR: ", split_and_pair_values(form_data[str(end_time)]))
