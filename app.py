@@ -4,15 +4,16 @@ import os
 import librosa
 import numpy as np
 import tempfile
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, session
 import replicate
 from dotenv import load_dotenv
-from tasks import long_running_task, process_audio, generate_image_task
+from tasks import long_running_task, process_audio, generate_image_task, download_prompt
 from queue_config import queue, redis_conn
 from flask_cors import CORS
 from datetime import datetime
 import cloudinary
 import cloudinary.uploader
+import uuid
 
 CLOUDINARY_URL = 'cloudinary://851777568929886:GJN-qDx1C7idDTO4SZ92FuD3mI0@hqxlqewng'
 cloudinary.config(
@@ -91,7 +92,7 @@ def get_recent_images():
 
         # Fetch details for the 5 most recent images
         for key in sorted_image_keys[:10]:
-            print("key: ", key.decode())
+            # print("key: ", key.decode())
             image_url = redis_conn.get(key).decode("utf-8")
             image_metadata = redis_conn.hgetall(f"image_metadata:{key.decode().split('.')[-1]}")
             prompt = image_metadata.get(b'prompt', b'No prompt').decode('utf-8')
@@ -350,6 +351,33 @@ def upload_audio_large():
 #     # Job is still processing
 #     return jsonify({'status': job.get_status()}), 200
 
+def get_started_task_count():
+    worker_keys = redis_conn.smembers("rq:workers")
+    
+    started_count = 0
+    for worker_key in worker_keys:
+        # print("worker key: %s" % worker_key.decode('utf-8'))
+        # each worker key (e.g., "worker:<worker_name>") has a hash key "current_job"
+        worker_data = redis_conn.hgetall(f"{worker_key.decode('utf-8')}")
+        # If worker is processing a job, it will have a "current_job" field
+        if worker_data.get(b'current_job'):
+            started_count += 1
+
+    return started_count
+
+def get_queue_length():
+    queue_key = f"rq:queue:{queue.name}"
+    num_queue_key = redis_conn.llen(queue_key)
+    num_started_key = get_started_task_count()
+    print("queue items, in progress items: ", num_queue_key, num_started_key)
+
+    return num_queue_key + num_started_key
+    # return queue.count()
+
+@app.route('/get_queue_length', methods=['GET'])
+def queue_length():
+    queue_length = get_queue_length()
+    return jsonify({"queue_length": queue_length}), 200
 
 @app.route('/generate_initial', methods=['POST'])
 def generate_initial():
@@ -1031,84 +1059,84 @@ def generate_prompt_completion(client, prompt):
     return completion.choices[0].message['content']
 
     
-def create_deforum_prompt(motion_data, final_anim_frames, motion_mode, prompts,seed):
-    # print("HERE ", ', '.join(motion_data['rotation_3d_y']))
-    # print(motion_data['rotation_3d_y'][0:-1])
-    input={
-        "fov": 40,
-        "fps": 15,
-        "seed": seed,
-        "zoom": ", ".join(motion_data['zoom']),
-        "angle": ", ".join(motion_data['angle']),
-        "width": 512,
-        "border": "replicate",
-        "height": 512,
-        "sampler": "dpmpp_2m",
-        "use_init": True,
-        "use_mask": False,
-        "clip_name": "ViT-L/14",
-        "far_plane": 10000,
-        # "init_image": "https://raw.githubusercontent.com/ct3008/ct3008.github.io/main/images/isee1.jpeg",
-        "init_image": "https://replicate.delivery/pbxt/bb6BIQ1vtyIhOhe6p8ZaeeEg4rYm2k9UNTbipzxzzT2xw2pnA/out-0.png",
-        "max_frames": final_anim_frames[-1],
-        "near_plane": 200,
-        "invert_mask": False,
-        "midas_weight": 0.3,
-        "padding_mode": "border",
-        "rotation_3d_x": ", ".join(motion_data['rotation_3d_x']),
-        "rotation_3d_y": ", ".join(motion_data['rotation_3d_y']),
-        "rotation_3d_z": ", ".join(motion_data['rotation_3d_z']),
-        "sampling_mode": "bicubic",
-        "translation_x": ", ".join(motion_data['translation_x']),
-        "translation_y": ", ".join(motion_data['translation_y']),
-        "translation_z": "0:(10)",
-        "animation_mode": "3D",
-        "guidance_scale": 7,
-        "noise_schedule": "0: (0.02)",
-        "sigma_schedule": "0: (1.0)",
-        "use_mask_video": False,
-        "amount_schedule": "0: (0.2)",
-        "color_coherence": "Match Frame 0 RGB",
-        "kernel_schedule": "0: (5)",
-        "model_checkpoint": "Protogen_V2.2.ckpt",
-        "animation_prompts": prompts,
-        "contrast_schedule": "0: (1.0)",
-        "diffusion_cadence": "1",
-        "extract_nth_frame": 1,
-        "resume_timestring": "",
-        "strength_schedule": "0: (0.65)",
-        "use_depth_warping": True,
-        "threshold_schedule": "0: (0.0)",
-        "flip_2d_perspective": False,
-        "hybrid_video_motion": "None",
-        "num_inference_steps": 50,
-        "perspective_flip_fv": "0:(53)",
-        "interpolate_x_frames": 4,
-        "perspective_flip_phi": "0:(t%15)",
-        "hybrid_video_composite": False,
-        "interpolate_key_frames": False,
-        "perspective_flip_gamma": "0:(0)",
-        "perspective_flip_theta": "0:(0)",
-        "resume_from_timestring": False,
-        "hybrid_video_flow_method": "Farneback",
-        "overwrite_extracted_frames": True,
-        "hybrid_video_comp_mask_type": "None",
-        "hybrid_video_comp_mask_inverse": False,
-        "hybrid_video_comp_mask_equalize": "None",
-        "hybrid_video_comp_alpha_schedule": "0:(1)",
-        "hybrid_video_generate_inputframes": False,
-        "hybrid_video_comp_save_extra_frames": False,
-        "hybrid_video_use_video_as_mse_image": False,
-        "color_coherence_video_every_N_frames": 1,
-        "hybrid_video_comp_mask_auto_contrast": False,
-        "hybrid_video_comp_mask_contrast_schedule": "0:(1)",
-        "hybrid_video_use_first_frame_as_init_image": True,
-        "hybrid_video_comp_mask_blend_alpha_schedule": "0:(0.5)",
-        "hybrid_video_comp_mask_auto_contrast_cutoff_low_schedule": "0:(0)",
-        "hybrid_video_comp_mask_auto_contrast_cutoff_high_schedule": "0:(100)"
-    }
+# def create_deforum_prompt(motion_data, final_anim_frames, motion_mode, prompts,seed):
+#     # print("HERE ", ', '.join(motion_data['rotation_3d_y']))
+#     # print(motion_data['rotation_3d_y'][0:-1])
+#     input={
+#         "fov": 40,
+#         "fps": 15,
+#         "seed": seed,
+#         "zoom": ", ".join(motion_data['zoom']),
+#         "angle": ", ".join(motion_data['angle']),
+#         "width": 512,
+#         "border": "replicate",
+#         "height": 512,
+#         "sampler": "dpmpp_2m",
+#         "use_init": True,
+#         "use_mask": False,
+#         "clip_name": "ViT-L/14",
+#         "far_plane": 10000,
+#         # "init_image": "https://raw.githubusercontent.com/ct3008/ct3008.github.io/main/images/isee1.jpeg",
+#         "init_image": "https://replicate.delivery/pbxt/bb6BIQ1vtyIhOhe6p8ZaeeEg4rYm2k9UNTbipzxzzT2xw2pnA/out-0.png",
+#         "max_frames": final_anim_frames[-1],
+#         "near_plane": 200,
+#         "invert_mask": False,
+#         "midas_weight": 0.3,
+#         "padding_mode": "border",
+#         "rotation_3d_x": ", ".join(motion_data['rotation_3d_x']),
+#         "rotation_3d_y": ", ".join(motion_data['rotation_3d_y']),
+#         "rotation_3d_z": ", ".join(motion_data['rotation_3d_z']),
+#         "sampling_mode": "bicubic",
+#         "translation_x": ", ".join(motion_data['translation_x']),
+#         "translation_y": ", ".join(motion_data['translation_y']),
+#         "translation_z": "0:(10)",
+#         "animation_mode": "3D",
+#         "guidance_scale": 7,
+#         "noise_schedule": "0: (0.02)",
+#         "sigma_schedule": "0: (1.0)",
+#         "use_mask_video": False,
+#         "amount_schedule": "0: (0.2)",
+#         "color_coherence": "Match Frame 0 RGB",
+#         "kernel_schedule": "0: (5)",
+#         "model_checkpoint": "Protogen_V2.2.ckpt",
+#         "animation_prompts": prompts,
+#         "contrast_schedule": "0: (1.0)",
+#         "diffusion_cadence": "1",
+#         "extract_nth_frame": 1,
+#         "resume_timestring": "",
+#         "strength_schedule": "0: (0.65)",
+#         "use_depth_warping": True,
+#         "threshold_schedule": "0: (0.0)",
+#         "flip_2d_perspective": False,
+#         "hybrid_video_motion": "None",
+#         "num_inference_steps": 50,
+#         "perspective_flip_fv": "0:(53)",
+#         "interpolate_x_frames": 4,
+#         "perspective_flip_phi": "0:(t%15)",
+#         "hybrid_video_composite": False,
+#         "interpolate_key_frames": False,
+#         "perspective_flip_gamma": "0:(0)",
+#         "perspective_flip_theta": "0:(0)",
+#         "resume_from_timestring": False,
+#         "hybrid_video_flow_method": "Farneback",
+#         "overwrite_extracted_frames": True,
+#         "hybrid_video_comp_mask_type": "None",
+#         "hybrid_video_comp_mask_inverse": False,
+#         "hybrid_video_comp_mask_equalize": "None",
+#         "hybrid_video_comp_alpha_schedule": "0:(1)",
+#         "hybrid_video_generate_inputframes": False,
+#         "hybrid_video_comp_save_extra_frames": False,
+#         "hybrid_video_use_video_as_mse_image": False,
+#         "color_coherence_video_every_N_frames": 1,
+#         "hybrid_video_comp_mask_auto_contrast": False,
+#         "hybrid_video_comp_mask_contrast_schedule": "0:(1)",
+#         "hybrid_video_use_first_frame_as_init_image": True,
+#         "hybrid_video_comp_mask_blend_alpha_schedule": "0:(0.5)",
+#         "hybrid_video_comp_mask_auto_contrast_cutoff_low_schedule": "0:(0)",
+#         "hybrid_video_comp_mask_auto_contrast_cutoff_high_schedule": "0:(100)"
+#     }
 
-    return input
+#     return input
 
 def process_video_with_speed_adjustments(api_url, adjustments, song_name):
     # Step 1: Download the video from the API URL
@@ -1372,6 +1400,18 @@ def process_data():
     
     # Respond immediately with the job ID
     return jsonify({"job_id": job.get_id(), "status": "queued"}), 202
+
+@app.route("/download_prompt", methods=["POST"])
+def download_prompt_caller():
+    # Enqueue the task and pass the request data
+    data = request.json
+    
+    prompt = download_prompt(data)
+    
+    print("prompt: ", prompt)
+    
+    # Respond immediately with the job ID
+    return jsonify({"prompt": prompt}), 202
 
 
 if __name__ == "__main__":

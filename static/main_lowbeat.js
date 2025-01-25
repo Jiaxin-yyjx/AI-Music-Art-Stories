@@ -1319,6 +1319,8 @@ function fillDefaultsTemp(load = false) {
     const trash = document.getElementById("trash");
     const processButton = document.getElementById("process-table")
     const saveState = document.getElementById("saveState")
+    const checkQueue = document.getElementById("checkQueue")
+    const downloadPrompt = document.getElementById("downloadPrompt")
     const seed = document.getElementById("seed")
 
 
@@ -1346,6 +1348,8 @@ function fillDefaultsTemp(load = false) {
     processButton.style.display = "block";
     seed.style.display = "inline-block";
     saveState.style.display = "block";
+    downloadPrompt.style.display = "block";
+    checkQueue.style.display = "block";
 }
 
 function fillDefaults() {
@@ -1586,15 +1590,21 @@ function validateInputs(motionInput, strengthInput, index) {
 
     // Validate strength values
     const invalidStrengths = strengthValues.filter(value => {
-        // Check if value is not a valid strength or a valid mathematical function or integer
+        // Check if value is a valid integer
         const isInteger = /^-?\d+$/.test(value); // Matches positive or negative integers
+    
+        // Check if value is a valid float
+        const isFloat = /^-?\d+(\.\d+)?$/.test(value); // Matches positive or negative floats (e.g., 3.14, -5.6)
+    
+        // Check if value is a valid mathematical function
         const isValidFunction = /^-?(\d+(\.\d+)?(\*\d+(\.\d+)?)*)?\*?(sin|cos|tan)\((-?\d+(\.\d+)?(\*\d+(\.\d+)?)*)?\*?t\/\d+(\.\d+)?\)$/.test(value); // Matches functions like 10*sin(2*t/5)
-        // console.log(!strengths.includes(value), !isInteger, !isValidFunction)
-        return !strengths.includes(value) && !isInteger && !isValidFunction;
+    
+        // Return true if the value is invalid (not in strengths, not an integer, not a float, and not a valid function)
+        return !strengths.includes(value) && !isInteger && !isFloat && !isValidFunction;
     });
-
+    
     if (invalidStrengths.length > 0) {
-        alert(`Timestamp ${index + 1}: Invalid strength values: ${invalidStrengths.join(", ")}. Valid strengths: integers or mathematical functions like 10*sin(2*t/5).`);
+        alert(`Timestamp ${index + 1}: Invalid strength values: ${invalidStrengths.join(", ")}. Valid strengths: integers, floats, or mathematical functions like 10*sin(2*t/5).`);
         return false;
     }
     
@@ -2010,6 +2020,70 @@ function processTable() {
         });
 }
 
+function downloadPrompt() {
+    const formData = gatherFormData();
+    // console.log("FORM DATA: ", formData);
+    const transitionsData = gatherTransitionData(formData);
+    let seed = document.getElementById("seed").value;
+    document.getElementById('processedDataContainer').innerHTML = '';
+    document.getElementById('processedDataContainer').style = "border: none;";
+    seed = parseInt(seed, 10);
+    if (isNaN(seed)) {
+        seed = 868591112; // Default value
+    }
+    let backgroundImageUrl = $('#img-view').css('background-image');
+
+    // Extract the URL (removes the `url("...")` part)
+    backgroundImageUrl = backgroundImageUrl.replace(/^url\(["']?/, '').replace(/["']?\)$/, '');
+
+    // console.log("image url: ", backgroundImageUrl);
+
+    const data = {
+        timestamps_scenes: significantPoints.map(point => point.toFixed(2)),
+        form_data: formData,
+        transitions_data: transitionsData,
+        song_len: audioDuration,
+        motion_mode: motion_mode,
+        seed: seed,
+        input_image_url: backgroundImageUrl
+    };
+
+    console.log("Sending data for prompt generation");
+
+    // Fetch the prompt from the backend
+    fetch('/download_prompt', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+        .then(response => response.json())
+        .then(responseData => {
+            console.log("Prompt received:", responseData.prompt);
+
+            // Convert state to JSON and save it as a file
+            const blob = new Blob([JSON.stringify(responseData.prompt, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            // Create a temporary download link
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'prompt_state.json';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Clean up the object URL
+            URL.revokeObjectURL(url);
+
+            console.log("Prompt saved as JSON file.");
+        })
+        .catch(error => {
+            console.error('Error fetching prompt:', error);
+        });
+}
+
 function clearExistingData() {
     //Clear out Fields
     existingTransitionValues = {};
@@ -2050,6 +2124,7 @@ function clearExistingData() {
     const process_table = document.getElementById("process-table")
     const seed = document.getElementById("seed")
     const brainstormbox = document.getElementById('brainstormingBox')
+    
 
     dropdownToggle.style.display = 'none';
     detailsBox.style.display = 'none';
@@ -2070,10 +2145,74 @@ function clearExistingData() {
     document.getElementById('processedDataContainer').innerHTML = '';
     document.getElementById('processedDataContainer').style = "border: none;"
 
+    const saveState = document.getElementById("saveState")
+    const checkQueue = document.getElementById("checkQueue")
+    const downloadPrompt = document.getElementById("downloadPrompt")
+    saveState.style.display = "none";
+    checkQueue.style.display = "none";
+    downloadPrompt.style.display = "none";
+
 }
 
 
 document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener('wheel', function (event) {
+        // Check if the event occurred inside a scrollable container
+        const isScrollable = isInsideScrollableContainer(event);
+    
+        // Suppress horizontal navigation unless inside a scrollable container
+        if (!isScrollable && (event.deltaX < 0 || event.deltaX > 0)) {
+            // console.log("Preventing horizontal navigation");
+            event.preventDefault();
+        }
+    }, { passive: false });
+    
+    function isInsideScrollableContainer(event) {
+        let current = event.target;
+    
+        // Traverse up the DOM tree to check for scrollable containers
+        while (current) {
+            if (current.scrollWidth > current.clientWidth) {
+                // Ensure the container is still scrollable
+                const hasScrollRemaining =
+                    (current.scrollLeft > 0 && event.deltaX < 0) || // Scrolling left
+                    (current.scrollLeft < current.scrollWidth - current.clientWidth && event.deltaX > 0); // Scrolling right
+    
+                if (hasScrollRemaining) {
+                    // console.log("Scrollable container with space to scroll:", current);
+                    return true; // Found a valid scrollable container
+                }
+            }
+            current = current.parentElement;
+        }
+    
+        // console.log("No scrollable container found");
+        return false; // No valid scrollable container
+    }
+    
+    
+    window.addEventListener('popstate', function (event) {
+        // console.log("Pop state: " + event)
+        // Intercept the browser back action
+        const confirmation = confirm('Are you sure you want to leave this page?');
+    
+        if (!confirmation) {
+            // Prevent navigation to the previous page if the user cancels
+            history.pushState(null, '', window.location.href);
+        }
+    });
+    
+    // Optional: Adding a handler for any "beforeunload" to make sure the user is warned about navigating away
+    window.addEventListener('beforeunload', function (event) {
+        // console.log("unload: " + event)
+        const confirmationMessage = 'Are you sure you want to leave?';
+    
+        // Standard message for the browser confirmation dialog (varies by browser)
+        event.returnValue = confirmationMessage;
+    
+        // For modern browsers that support custom messages
+        return confirmationMessage;
+    });
     // Define the processAudio function
     const audioFileInput = document.getElementById('audioFile');
     console.log("file: " + audioFileInput)
@@ -4132,7 +4271,13 @@ function saveState() {
     const colorInput = document.getElementById("colorInput").value;
     const imageryInput = document.getElementById("imageryInput").value;
     const textureInput = document.getElementById("textureInput").value;
-    console.log("SAVE STATE METADATA: ", selectedFile.name, vibeInput, textureInput, colorInput, imageryInput)
+    const imageView = document.getElementById('img-view');
+    const style = getComputedStyle(imageView);
+    const backgroundImage = style.backgroundImage;
+    const urlMatch = backgroundImage.match(/url\(["']?([^"']*)["']?\)/);
+
+    
+    console.log("SAVE STATE METADATA: ", selectedFile.name, vibeInput, textureInput, colorInput, imageryInput, urlMatch)
     const state = {
         intervalTimes: waveData.form,
         transitionTimes: waveData.trans,      
@@ -4142,7 +4287,8 @@ function saveState() {
         vibeInput: vibeInput,
         colorInput: colorInput,
         imageryInput: imageryInput,
-        textureInput: textureInput
+        textureInput: textureInput,
+        imageLink: urlMatch[1]
     };
     console.log("State: ", state)
 
@@ -4304,8 +4450,17 @@ function initializeWaveform(intervalTimes, transitionTimes) {
 
 }
 
+function initializeImage(imageLink){
+    const imageView = document.getElementById('img-view');
+    if (imageLink){
+        imageView.style.backgroundImage = `url(${imageLink})`;  // Set background image
+        imageView.textContent = "";  // Clear any text content
+        imageView.style.border = 0;  // Remove any border (if needed)
+    }
+}
+
 function initializeTable(jsonData) {
-    const { intervalTimes, transitionTimes , formData, transitionData, songname, vibeInput, colorInput, imageryInput, textureInput} = jsonData;
+    const { intervalTimes, transitionTimes , formData, transitionData, songname, vibeInput, colorInput, imageryInput, textureInput, imageLink} = jsonData;
     console.log('Initializing table with data:', formData, transitionData);
     console.log("initialize table metadata: ", songname, vibeInput, colorInput, imageryInput, textureInput)
     // essentially do the reverse of clearExistingData + reinitialize all data structs
@@ -4316,6 +4471,7 @@ function initializeTable(jsonData) {
     show_transitions();
     show_default_boxes(vibeInput, colorInput, imageryInput, textureInput); 
     show_brainstorming();
+    initializeImage(imageLink);
 
     refreshTable("form");
     refreshTable("trans");
@@ -4369,6 +4525,11 @@ function initializeTable(jsonData) {
     refreshTable("none", transitionData);
     // refreshTable("trans");
 
-   
+}
 
+
+async function checkQueue() {
+    const response = await fetch('/get_queue_length');
+    const data = await response.json();
+    alert(`There are ${data.queue_length} jobs in the queue.`);
 }

@@ -233,7 +233,8 @@ def generate_image_task(data):
             print("saving under timestamp: ", timestamp, public_id)
 
             print('Image uploaded to Cloudinary:', cloudinary_image_url, public_id)
-            return {'status': "success", 'output': image_url}  # Return the result data instead of jsonify
+            # return {'status': "success", 'output': image_url}  # Return the result data instead of jsonify
+            return {'status': "success", 'output': cloudinary_image_url}
 
         return {"status": "error", 'error': 'Unexpected output format'}  # Return error message as dict
     except TimeoutError:
@@ -294,6 +295,78 @@ def long_running_task(data):
         print("INIT IMAGE THAT IS PASSED IN: ", input_image_url)
         deforum_prompt = create_deforum_prompt(motion_strings, final_anim_frames, motion_mode, prompts, seed, input_image_url)
         print("deforum prompt: ", deforum_prompt)
+        # deforum_prompt = {
+        #     "fov": 40,
+        #     "fps": 15,
+        #     "seed": 868591112,
+        #     "zoom": "0:(0.7), 27:(0.7), 28:(0)",
+        #     "angle": "0:(0)",
+        #     "width": 512,
+        #     "border": "replicate",
+        #     "height": 512,
+        #     "sampler": "euler_ancestral",
+        #     "use_init": True,
+        #     "use_mask": False,
+        #     "clip_name": "ViT-L/14",
+        #     "far_plane": 10000,
+        #     "init_image": "https://raw.githubusercontent.com/ct3008/ct3008.github.io/main/images/isee1.jpeg",
+        #     "max_frames": 50,
+        #     "near_plane": 200,
+        #     "invert_mask": False,
+        #     "midas_weight": 0.3,
+        #     "padding_mode": "border",
+        #     "rotation_3d_x": "0:(0)",
+        #     "rotation_3d_y": "0:(0)",
+        #     "rotation_3d_z": "0:(0)",
+        #     "sampling_mode": "bicubic",
+        #     "translation_x": "0:(10*sin(2*3.14*t/10))",
+        #     "translation_y": "0:(0)",
+        #     "translation_z": "0:(10)",
+        #     "animation_mode": "2D",
+        #     "guidance_scale": 7,
+        #     "noise_schedule": "0: (0.02)",
+        #     "sigma_schedule": "0: (1.0)",
+        #     "use_mask_video": False,
+        #     "amount_schedule": "0: (0.2)",
+        #     "color_coherence": "Match Frame 0 LAB",
+        #     "kernel_schedule": "0: (5)",
+        #     "model_checkpoint": "Protogen_V2.2.ckpt",
+        #     "animation_prompts": "0: a beautiful apple, trending on Artstation",
+        #     "contrast_schedule": "0: (1.0)",
+        #     "diffusion_cadence": "1",
+        #     "extract_nth_frame": 1,
+        #     "resume_timestring": "20220829210106",
+        #     "strength_schedule": "0: (0.65)",
+        #     "use_depth_warping": True,
+        #     "threshold_schedule": "0: (0.0)",
+        #     "flip_2d_perspective": False,
+        #     "hybrid_video_motion": "None",
+        #     "num_inference_steps": 50,
+        #     "perspective_flip_fv": "0:(53)",
+        #     "interpolate_x_frames": 4,
+        #     "perspective_flip_phi": "0:(t%15)",
+        #     "hybrid_video_composite": False,
+        #     "interpolate_key_frames": False,
+        #     "perspective_flip_gamma": "0:(0)",
+        #     "perspective_flip_theta": "0:(0)",
+        #     "resume_from_timestring": False,
+        #     "hybrid_video_flow_method": "Farneback",
+        #     "overwrite_extracted_frames": True,
+        #     "hybrid_video_comp_mask_type": "None",
+        #     "hybrid_video_comp_mask_inverse": False,
+        #     "hybrid_video_comp_mask_equalize": "None",
+        #     "hybrid_video_comp_alpha_schedule": "0:(1)",
+        #     "hybrid_video_generate_inputframes": False,
+        #     "hybrid_video_comp_save_extra_frames": False,
+        #     "hybrid_video_use_video_as_mse_image": False,
+        #     "color_coherence_video_every_N_frames": 1,
+        #     "hybrid_video_comp_mask_auto_contrast": False,
+        #     "hybrid_video_comp_mask_contrast_schedule": "0:(1)",
+        #     "hybrid_video_use_first_frame_as_init_image": True,
+        #     "hybrid_video_comp_mask_blend_alpha_schedule": "0:(0.5)",
+        #     "hybrid_video_comp_mask_auto_contrast_cutoff_low_schedule": "0:(0)",
+        #     "hybrid_video_comp_mask_auto_contrast_cutoff_high_schedule": "0:(100)"
+        #     }
         # Run the API
         output = api.run(
             "deforum-art/deforum-stable-diffusion:1a98303504c7d866d2b198bae0b03237eab82edc1491a5306895d12b0021d6f6",
@@ -355,3 +428,35 @@ def long_running_task(data):
         raise
     # Perform task
     return {"result": "Task completed"}
+
+def download_prompt(data):
+    print("run download_prompt")
+
+    timestamps_scenes = data['timestamps_scenes']
+    form_data = data['form_data']
+    transitions_data = data['transitions_data']
+    song_len = data['song_len']
+    motion_mode = data['motion_mode']
+    seed = data['seed']
+    input_image_url = data.get('input_image_url',"https://raw.githubusercontent.com/ct3008/ct3008.github.io/main/images/isee1.jpeg")
+
+    # Processing the data
+    # song_duration, scene_change_times, transition_times, time_intervals, interval_strings, motion_data = parse_input_data(form_data, transitions_data, song_len)
+    song_duration, scene_change_times, transition_times, time_intervals, interval_strings, motion_data, og_motion_data= parse_input_data(form_data, transitions_data, song_len)
+    final_anim_frames = [0]
+    if round(song_len, 2) not in scene_change_times:
+        scene_change_times.append(round(song_len, 2))
+    
+    frame_data, animation_prompts = calculate_frames(scene_change_times, interval_strings, motion_data, song_duration, final_anim_frames)
+    motion_strings = build_transition_strings(frame_data)
+    prompts = generate_image_prompts(form_data, final_anim_frames)
+
+    # Create the Deforum prompt
+    print("INIT IMAGE TO BE PASSED IN: ", input_image_url)
+    if not input_image_url or str(input_image_url).lower() == "none":
+        print("No valid input image URL specified. Using default.")
+        input_image_url = "https://raw.githubusercontent.com/ct3008/ct3008.github.io/main/images/isee1.jpeg"
+    print("INIT IMAGE THAT IS PASSED IN: ", input_image_url)
+    deforum_prompt = create_deforum_prompt(motion_strings, final_anim_frames, motion_mode, prompts, seed, input_image_url)
+    print("deforum prompt: ", deforum_prompt)
+    return deforum_prompt
