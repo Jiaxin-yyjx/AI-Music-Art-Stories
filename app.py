@@ -54,7 +54,7 @@ def save_api_key():
         if not api_key:
             return jsonify({'message': 'API Key is missing!'}), 400
         
-        if "disco" in api_key:
+        if "disco" == api_key.lower().strip():
             api_key = os.getenv("LAB_DISCO_API_KEY")
             redis_conn.set("api_key", api_key)
             print("DISCO KEYWORD: ", api_key)
