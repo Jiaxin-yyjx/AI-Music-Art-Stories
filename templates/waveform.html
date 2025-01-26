@@ -22,7 +22,7 @@
 <!-- <input type="text" id="api_key" placeholder="Enter API Key">
 
 <button onclick="sendApiKey()">Save</button> -->
-<div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+<div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 5px;">
     <!-- Existing items -->
     <div>
         <input type="text" id="api_key" placeholder="Enter API Key">
@@ -35,7 +35,7 @@
         <button id="loadState" onclick="promptAndLoadState()" style="display: none;" >Load State</button>
     </div>
 </div>
-<div id="headers" style="display: flex; flex-wrap: wrap; gap: 10px;">
+<div id="headers" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 5px;">
     <input type="file" id="audioFile" accept=".m4a, .mp3, .wav" disabled>
     <button id="addNewInterval" style="display: none;" onclick="addNewInterval()">Add Interval</button>
     <button onclick="delete_intervals()" style="display: none;" id="deleteButton">Delete Intervals</button>
@@ -105,7 +105,7 @@
     <label for="textureInput">Texture:</label>
     <input type="text" id="textureInput"placeholder="Enter texture of imagery (e.g., ink art on calligraphy paper)"> -->
 <!-- </div> -->
-<div style="display: flex; flex-direction: column; width: 100%;">
+<div id="details_wrapper" style="display: flex; flex-direction: column; width: 100%;">
     <button id="dropdownToggle" style="margin-bottom: 10px; display: none;">Hide Details ▲</button>
     <div style="display: flex;">
         <div id="detailsBox"
@@ -336,12 +336,25 @@
     <button type="submit">Upload</button>
 </form> -->
 <!-- <button id="submitSelectedImage">Submit Selected Image</button> -->
-<button id="saveState" onclick="saveState()" style="display: none;" >Save State</button>
+<!-- <button id="saveState" onclick="saveState()" style="display: none;" >Save State</button>
 
 <button id="checkQueue" onclick="checkQueue()" style="display: none;">Click to Check Queue Length</button>
-<button id="downloadPrompt" onclick="downloadPrompt()" style="display: none;">Download Replicate Prompt</button>
+<button id="downloadPrompt" onclick="downloadPrompt()" style="display: none;">Download Prompt</button> -->
+<div id="toggle_helper">
+    <button 
+        id="toggleHelpers" 
+        onclick="toggleHelpers()">
+        Helper Functions ▼
+    </button>
 
-<div id="process-table" style="display:none;">
+    <div id="helperButtons">
+        <button id="saveState" onclick="saveState()" style="display: inline-block; margin-right: 8px;">Save State</button>
+        <button id="checkQueue" onclick="checkQueue()" style="display: inline-block; margin-right: 8px;">Check Job Queue</button>
+        <button id="downloadPrompt" onclick="downloadPrompt()" style="display: inline-block;">Download Prompt</button>
+    </div>
+</div>
+
+<div id="process-table" style="display:none; margin-bottom: 20px;">
     <button id="process-table" style="display:inline-block;" onclick="processTable()">Create Video</button>
     <input type="number" id="seed" step="1" style="display:inline-block;" placeholder="Seed. Default: 868591112">
 </div>

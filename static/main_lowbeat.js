@@ -419,7 +419,7 @@ function show_default_boxes(vibeInputVal = "", colorInputVal = "", imageryInputV
     const textureInput = document.getElementById("textureInput");
     const image_examples = document.getElementById("image_examples")
     const detail_gallery_toggle = document.getElementById("dropdownToggle")
-    console.log("IN SHOW DEFAULT BOXES: ", vibeInputVal, colorInputVal, imageryInputVal, textureInputVal)
+    // console.log("IN SHOW DEFAULT BOXES: ", vibeInputVal, colorInputVal, imageryInputVal, textureInputVal)
 
 
     const fillDefaultsButton = document.getElementById("fill-defaults")
@@ -449,7 +449,7 @@ function show_default_boxes(vibeInputVal = "", colorInputVal = "", imageryInputV
 
     // Show color picker when button is clicked
     colorPickerButton.addEventListener("click", function () {
-        console.log("hello color click")
+        // console.log("hello color click")
         updateColorPickerFromInput();  // Update color picker to match the current color input
         colorPicker.click();           // Trigger the color picker
     });
@@ -519,14 +519,14 @@ function finalizeTimestamps(name, regionIndex_form, regionIndex_trans, transitio
     // timestampsContainer.innerHTML = ''; // Clear previous timestamps
 
     const roundedSignificantPoints = newsigPoints.map(point => point.toFixed(2));
-    console.log("ROUNDED SIG: ", roundedSignificantPoints);
+    // console.log("ROUNDED SIG: ", roundedSignificantPoints);
 
     // Convert to numbers, add boundaries, and sort
     const timestamps = [0, ...roundedSignificantPoints, audioDuration.toFixed(2)]
     .map(Number)
     .sort((a, b) => a - b);
 
-    console.log("TIMESTAMP: ", timestamps);
+    // console.log("TIMESTAMP: ", timestamps);
     const sectionsCount = newsigPoints.length;
     let container;
     let labels = [];
@@ -779,7 +779,7 @@ function finalizeTimestamps(name, regionIndex_form, regionIndex_trans, transitio
                         // Store only the values for the current interval or region
                         const intervalInputs = Array.from(inputContainer.querySelectorAll('input'));
                         existingValues[i] = intervalInputs.map(input => input.value);
-                        console.log("Updated values on blur:", existingValues);
+                        // console.log("Updated values on blur:", existingValues);
                     }, 100);
                 });
 
@@ -847,7 +847,7 @@ function finalizeTimestamps(name, regionIndex_form, regionIndex_trans, transitio
 
         // console.log("transition sections: ", document.querySelectorAll('.transition-section'))
         let length = allRegions.filter(region => region.color === 'rgba(255, 165, 0, 0.5)').length;
-        console.log("LENGTH:", allRegions.filter(region => region.color === 'rgba(255, 165, 0, 0.5)').length);
+        // console.log("LENGTH:", allRegions.filter(region => region.color === 'rgba(255, 165, 0, 0.5)').length);
 
         if (length != 0 && regionIndex_trans >= 0) {
             //Add a transition
@@ -881,7 +881,7 @@ function finalizeTimestamps(name, regionIndex_form, regionIndex_trans, transitio
             console
             const transitionEnd = region.endTime;
 
-            console.log("existing transition main low: ", transitionStart, transitionEnd, name);
+            // console.log("existing transition main low: ", transitionStart, transitionEnd, name);
             // console.log(existingTransitionValues)
             addTransitions(index, transitionStart, transitionEnd, Math.abs(Object.keys(existingTransitionValues).length - 1 - index), existingTransitionValues, regionIndex_trans, transitionData, name);
 
@@ -1102,7 +1102,7 @@ let existingTransitions = []; // Track all transitions globally
 // }
 
 function addTransitions(id, startTime, endTime, i, existingTransitionValues, regionIndex, transitionData = {}, name = "") {
-    console.log("existing transitions IN ADD TRANSITION: ", existingTransitionValues, name)
+    // console.log("existing transitions IN ADD TRANSITION: ", existingTransitionValues, name)
     // console.log("AddTrans2 called");
     const formContainers = document.querySelectorAll('.section');
     // console.log("formcontainer: ", formContainers)
@@ -1278,7 +1278,7 @@ function addTransitions(id, startTime, endTime, i, existingTransitionValues, reg
                     // console.log("enter loop: ", Object.keys(existingTransitionValues));
                     // console.log("check for transitionData inside: ", transitionData);                    
                     if (transitionData) {
-                        console.log("enter transitiondata")
+                        // console.log("enter transitiondata")
                         // existingTransitionValues = data
                         index = 0;
                         // let tmpDict = {}
@@ -1286,15 +1286,15 @@ function addTransitions(id, startTime, endTime, i, existingTransitionValues, reg
                         for (const interval of transitionKeys) {
                             // console.log("transitionData: ", transitionData)
                             // console.log("transitionData val: ", transitionData[interval])
-                            console.log("INTERVAL:", interval);
+                            // console.log("INTERVAL:", interval);
                             if (transitionData.hasOwnProperty(interval)) {
                                 const item = transitionData[interval];
-                                console.log("index, ITEM:", index, item['motion'],item['strength']);
+                                // console.log("index, ITEM:", index, item['motion'],item['strength']);
                                 existingTransitionValues[index] = [
                                     item['motion'],
                                     item['strength']
                                 ];
-                                console.log("Added to existing trans vals:", existingTransitionValues);
+                                // console.log("Added to existing trans vals:", existingTransitionValues);
                                 index++;
                             }
                         }
@@ -1321,6 +1321,7 @@ function fillDefaultsTemp(load = false) {
     const saveState = document.getElementById("saveState")
     const checkQueue = document.getElementById("checkQueue")
     const downloadPrompt = document.getElementById("downloadPrompt")
+    const toggle_helper = document.getElementById("toggle_helper")
     const seed = document.getElementById("seed")
 
 
@@ -1350,6 +1351,10 @@ function fillDefaultsTemp(load = false) {
     saveState.style.display = "block";
     downloadPrompt.style.display = "block";
     checkQueue.style.display = "block";
+    // toggle_helper.style.display = "inline-block";
+    toggle_helper.style.visibility = 'visible';
+    toggle_helper.style.opacity = '1';
+
 }
 
 function fillDefaults() {
@@ -1457,8 +1462,8 @@ function fillDefaults() {
                     input.value = vibeInput || vibes[Math.floor(Math.random() * vibes.length)];
                 }
                 else if (input.value && input.value != vibeInput && vibeInput != "") {
-                    console.log("Vibe: ", input.value);
-                    console.log("Vibe input: ", vibeInput);
+                    // console.log("Vibe: ", input.value);
+                    // console.log("Vibe input: ", vibeInput);
                     input.value = vibeInput;
                 }
             }
@@ -1468,8 +1473,8 @@ function fillDefaults() {
                     input.value = textureInput || chosenTexture;
                 }
                 else if (input.value && input.value != textureInput && textureInput != "") {
-                    console.log("Texture: ", input.value);
-                    console.log("Texture input: ", textureInput);
+                    // console.log("Texture: ", input.value);
+                    // console.log("Texture input: ", textureInput);
                     input.value = textureInput;
                 }
             }
@@ -1485,8 +1490,8 @@ function fillDefaults() {
                     input.value = imageryInput || chosenImagery;
                 }
                 else if (input.value && input.value != imageryInput && imageryInput != "") {
-                    console.log("Imagery: ", input.value);
-                    console.log("Imagery input: ", imageryInput);
+                    // console.log("Imagery: ", input.value);
+                    // console.log("Imagery input: ", imageryInput);
                     input.value = imageryInput;
                 }
             }
@@ -1561,8 +1566,8 @@ function fillDefaults() {
             }, {});
 
     });
-    console.log("Updated existingValues:", existingValues);
-    console.log("Updated existingTransitionValues:", existingTransitionValues);
+    // console.log("Updated existingValues:", existingValues);
+    // console.log("Updated existingTransitionValues:", existingTransitionValues);
 }
 
 
@@ -1621,7 +1626,7 @@ function gatherFormData() {
         .map(Number) // Ensure they are numbers
         .sort((a, b) => a - b); // Sort in ascending order
 
-    console.log("ROUNDED SIG (sorted): ", roundedSignificantPoints);
+    // console.log("ROUNDED SIG (sorted): ", roundedSignificantPoints);
 
     // Add the final timestamp if it's not already included
     const finalTimeStamp = audioDuration.toFixed(2);
@@ -1638,7 +1643,7 @@ function gatherFormData() {
 
         // Validate motion and strength inputs
         if (!validateInputs(motionInput, strengthInput, index)) {
-            console.log("invalid form data")
+            // console.log("invalid form data")
             return null; // Stop the form submission if validation fails
         }
 
@@ -1990,7 +1995,7 @@ function processTable() {
     // console.log(data);
     // console.log("RUNNING PROCESS TABLE");
 
-    console.log("process table")
+    // console.log("process table")
 
     fetch('/process-data', {
         method: 'POST',
@@ -2008,7 +2013,7 @@ function processTable() {
 
             // Call the function to check the job status
             checkJobStatus(jobId);
-            console.log("done checking job status");
+            // console.log("done checking job status");
             
         })
         .catch(error => {
@@ -2069,7 +2074,7 @@ function downloadPrompt() {
             // Create a temporary download link
             const link = document.createElement('a');
             link.href = url;
-            link.download = 'prompt_state.json';
+            link.download = 'prompt.json';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -2148,9 +2153,12 @@ function clearExistingData() {
     const saveState = document.getElementById("saveState")
     const checkQueue = document.getElementById("checkQueue")
     const downloadPrompt = document.getElementById("downloadPrompt")
+    const toggle_helper = document.getElementById("toggle_helper")
     saveState.style.display = "none";
     checkQueue.style.display = "none";
     downloadPrompt.style.display = "none";
+    toggle_helper.style.visibility = "hidden";
+    toggle_helper.style.opacity = 0;
 
 }
 
@@ -2238,7 +2246,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Listen for the file selection event
     audioFileInput.addEventListener('change', function (event) {
         
-        console.log("change")
+        console.log("Change audio file")
         selectedFile = document.getElementById('audioFile').files[0];
         console.log(selectedFile)
         fileSelected = !!selectedFile; // Set to true if a file is selected
@@ -2317,7 +2325,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // HANDLE DROPDOWN LOGIC FOR INPUT BOXES
     const handleDropdown = (inputId, dropdownId, dropdownButtonId) => {
-        console.log("inputId: " + inputId)
+        // console.log("inputId: " + inputId)
         // console.log("dropdownId: " + dropdownId)
         // console.log("dropdownButtonId: " + dropdownButtonId)
         const inputElement = document.getElementById(inputId);
@@ -2451,7 +2459,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 // Add click event to update the input fields
                 img.addEventListener("click", () => {
-                    console.log(imagery, textureName)
+                    // console.log(imagery, textureName)
                     imageryInput.value = imagery.replace('_', ' '); // Set the imagery value
                     textureInput.value = textureName.trim(); // Set the texture value
                 });
@@ -2490,13 +2498,13 @@ function playpauseControl(playPauseButton) {
 }
 
 function togglePlayPause() {
-    console.log("toggle")
+    // console.log("toggle")
     if (waveform.isPlaying()) {
-        console.log("playing -> pause it")
+        // console.log("playing -> pause it")
         playPauseButton.innerHTML = '▶';
         waveform.pause();
     } else {
-        console.log("paused -> play it")
+        // console.log("paused -> play it")
         playPauseButton.innerHTML = '⏸';
         waveform.play();
     }
@@ -2505,7 +2513,7 @@ function togglePlayPause() {
 // Example zoom application (replace with your actual zooming logic)
 function applyZoom(zoomLevel) {
     if (waveform) {
-        console.log("apply zoom")
+        // console.log("apply zoom")
         // Adjust the waveform zoom level
         waveform.zoom(zoomLevel);
 
@@ -2630,7 +2638,7 @@ function processAudio() {
 
                 play_start_button.addEventListener('click', () => {
                     if (waveform) {
-                        console.log("clicked")
+                        // console.log("clicked")
                         waveform.play(0); // Start playback from the beginning (time = 0)
                         playPauseButton.innerHTML = '⏸';
                     }
@@ -2753,7 +2761,7 @@ function setupRegions(waveform, data, content, color, size, drag, resize = false
             region.element.style.zIndex = 100;
             region.on('update-end', () => refreshTable("form"));
             region.on('remove', () => refreshTable("form"));
-            console.log("add green region")
+            // console.log("add green region")
         }
 
         // Add labels for Significant Points regions (as before)
@@ -3477,11 +3485,11 @@ function drawBeats(beats, beatContainer, duration, color, hidden = false) {
 
 function addNewInterval() {
     const cursorTime = waveform.getCurrentTime();
-    console.log("add new interval newsig: ", newsigPoints);
+    // console.log("add new interval newsig: ", newsigPoints);
     data = [cursorTime]
     newsigPoints = [data[0], ...newsigPoints];
     const index = newsigPoints.sort((a, b) => a - b).indexOf(data[0]);
-    console.log("add interval index: ", index)
+    // console.log("add interval index: ", index)
 
     newsigPoints = newsigPoints.sort((a, b) => a - b);
     // console.log("AFTER ADD: ", newsigPoints)
@@ -3537,7 +3545,7 @@ function delete_intervals() {
                 region.remove();
 
                 // Update the newsigPoints array by filtering out the deleted region
-                console.log(newsigPoints)
+                // console.log(newsigPoints)
                 console.log("reg start: ", region.start)
                 let deletedTimeIndex = 0;
                 for (let i = 0; i < newsigPoints.length; i++) {
@@ -3549,8 +3557,8 @@ function delete_intervals() {
                     }
                 }
                 newsigPoints = newsigPoints.filter(time => time !== region.start);
-                console.log("new sig in delete func: ", newsigPoints, existingValues)
-                console.log("DELETE INTERVAL FUNC INDEX: ", deletedTimeIndex)
+                // console.log("new sig in delete func: ", newsigPoints, existingValues)
+                // console.log("DELETE INTERVAL FUNC INDEX: ", deletedTimeIndex)
                 delete existingValues[deletedTimeIndex];
                 if (deletedTimeIndex === 0) {
 
@@ -3563,7 +3571,7 @@ function delete_intervals() {
                 //         return newObj;
                 //     }, {});
 
-                console.log(existingValues)
+                // console.log(existingValues)
 
                 refreshTable("form")
 
@@ -3988,9 +3996,9 @@ function delete_transitions() {
 
 
 function refreshTable(new_type, transitionData = {}) {
-    console.log("refreshTable existingTransitionValues: ", existingTransitionValues)
+    // console.log("refreshTable existingTransitionValues: ", existingTransitionValues)
     if(new_type == "load"){
-        console.log("refreshTable existingTransitionValues 0.5: ", existingTransitionValues)
+        // console.log("refreshTable existingTransitionValues 0.5: ", existingTransitionValues)
         // finalizeTimestamps("transition", -1, -1);
         return
     }
@@ -4002,14 +4010,14 @@ function refreshTable(new_type, transitionData = {}) {
         let orangeRegions = allRegions.filter(region => region.color === 'rgba(255, 165, 0, 0.5)').sort((a, b) => a.start - b.start);
 
         newsigPoints = greenRegions.map(region => region.start);
-        console.log("NEW SIG: ", newsigPoints);
+        // console.log("NEW SIG: ", newsigPoints);
         let newRegionIndex_trans = 't';
         let newRegionIndex_form = 'f';
-        console.log("refreshTable existingTransitionValues 2: ", existingTransitionValues)
+        // console.log("refreshTable existingTransitionValues 2: ", existingTransitionValues)
 
 
         if (new_type === "trans") {
-            console.log("Transition")
+            // console.log("Transition")
             // console.log("LENGTH BEFORE CALL:",orangeRegions.length,updatedOrangeRegions.length)
             // console.log("existing transitions before: ", existingTransitionValues)
             newRegionIndex_trans = handleRegionChanges(orangeRegions, updatedOrangeRegions, existingTransitionValues, "trans");
@@ -4025,7 +4033,7 @@ function refreshTable(new_type, transitionData = {}) {
             newRegionIndex_form = handleRegionChanges(greenRegions, updatedGreenRegions, existingValues, "form");
             updatedGreenRegions = greenRegions;
         }
-        console.log("refreshTable existingTransitionValues 3: ", existingTransitionValues)
+        // console.log("refreshTable existingTransitionValues 3: ", existingTransitionValues)
 
 
         if(new_type == "2D" || new_type == "3D"){
@@ -4185,51 +4193,118 @@ function showSignificantPoints() {
     });
 }
 
+// function toggleMotion() {
+//     const button = document.getElementById("toggleMotionButton");
+//     if (button.textContent === "3D Motion") {
+//         button.textContent = "2D Motion";
+//         motion_mode = "2D";
+//         console.log("toggle 3d to 2d")
+//         Object.keys(existingValues).forEach(key => {
+//             const valuesArray = existingValues[key];
+//             if (valuesArray && valuesArray.length >= 2) {
+//                 const index = valuesArray.length - 2;
+//                 const value = valuesArray[index];
+//                 console.log("toggle val form: ", value);
+//                 if (value.startsWith("rotate_c")) {
+//                     valuesArray[index] = value.replace("rotate_c", "spin_c");
+//                 } else if (value.startsWith("rotate")) {
+//                     valuesArray[index] = value.replace("rotate", "pan");
+//                 }
+//             }
+//         });
+
+//         // Refresh the table or UI to reflect the changes
+//         refreshTable("2D");
+//         // Add code here to handle the change to 3D motion
+//         // console.log("Switched to 2D Motion");
+//     } else {
+//         button.textContent = "3D Motion";
+//         motion_mode = "3D";
+
+//         console.log("toggle 2d to 3d")
+//         Object.keys(existingValues).forEach(key => {
+//             const valuesArray = existingValues[key];
+//             if (valuesArray && valuesArray.length >= 2) {
+//                 const index = valuesArray.length - 2;
+//                 const value = valuesArray[index];
+//                 console.log("toggle val form: ", value);
+//                 if (value.startsWith("spin")) {
+//                     valuesArray[index] = value.replace("spin", "rotate");
+//                 } else if (value.startsWith("pan")){
+//                     valuesArray[index] = value.replace("pan", "rotate");
+//                 }
+//             }
+//         });
+//         refreshTable("3D");
+//         // Add code here to handle the change to 2D motion
+//         // console.log("Switched to 3D Motion");
+//     }
+// }
+
 function toggleMotion() {
     const button = document.getElementById("toggleMotionButton");
     if (button.textContent === "3D Motion") {
         button.textContent = "2D Motion";
         motion_mode = "2D";
-        console.log("toggle 3d to 2d")
+        console.log("toggle 3d to 2d");
         Object.keys(existingValues).forEach(key => {
             const valuesArray = existingValues[key];
             if (valuesArray && valuesArray.length >= 2) {
                 const index = valuesArray.length - 2;
-                const value = valuesArray[index];
+                let value = valuesArray[index];
                 console.log("toggle val form: ", value);
-                if (value.startsWith("rotate_c")) {
-                    valuesArray[index] = value.replace("rotate_c", "spin_c");
-                } else if (value.startsWith("rotate")) {
-                    valuesArray[index] = value.replace("rotate", "pan");
-                }
+
+                // Handle multiple values separated by commas
+                const updatedValue = value.split(",").map(item => {
+                    if (item.startsWith("rotate_c")) {
+                        return item.replace("rotate_c", "spin_c");
+                    } else if (item.startsWith("rotate")) {
+                        return item.replace("rotate", "pan");
+                    } else if (item.startsWith("spin")) {
+                        return item.replace("spin", "pan");
+                    } else if (item.startsWith("pan")) {
+                        return item.replace("pan", "spin_c"); // Example of another transformation
+                    }
+                    return item; // Return the item as-is if no match
+                }).join(",");
+
+                valuesArray[index] = updatedValue;
             }
         });
 
         // Refresh the table or UI to reflect the changes
         refreshTable("2D");
-        // Add code here to handle the change to 3D motion
-        // console.log("Switched to 2D Motion");
     } else {
         button.textContent = "3D Motion";
         motion_mode = "3D";
-
-        console.log("toggle 3d to 2d")
+        console.log("toggle 2d to 3d");
         Object.keys(existingValues).forEach(key => {
             const valuesArray = existingValues[key];
             if (valuesArray && valuesArray.length >= 2) {
                 const index = valuesArray.length - 2;
-                const value = valuesArray[index];
+                let value = valuesArray[index];
                 console.log("toggle val form: ", value);
-                if (value.startsWith("spin")) {
-                    valuesArray[index] = value.replace("spin", "rotate");
-                } else if (value.startsWith("pan")){
-                    valuesArray[index] = value.replace("pan", "rotate");
-                }
+
+                // Handle multiple values separated by commas
+                const updatedValue = value.split(",").map(item => {
+                    if (item.startsWith("spin_c")) {
+                        return item.replace("spin_c", "rotate_c");
+                    } else if (item.startsWith("spin")) {
+                        return item.replace("spin", "rotate");
+                    } else if (item.startsWith("pan")) {
+                        return item.replace("pan", "rotate");
+                    } else if (item.startsWith("rotate")) {
+                        return item; // No replacement needed
+                    }
+                    return item; // Return the item as-is if no match
+                }).join(",");
+
+                valuesArray[index] = updatedValue;
             }
         });
+
+        // Refresh the table or UI to reflect the changes
         refreshTable("3D");
-        // Add code here to handle the change to 2D motion
-        // console.log("Switched to 3D Motion");
     }
 }
 
@@ -4275,10 +4350,10 @@ function saveState() {
     const style = getComputedStyle(imageView);
     const backgroundImage = style.backgroundImage;
     let urlMatch = backgroundImage.match(/url\(["']?([^"']*)["']?\)/);
-    console.log("url match: " + urlMatch);
+    // console.log("url match: " + urlMatch);
 
     
-    console.log("SAVE STATE METADATA: ", selectedFile.name, vibeInput, textureInput, colorInput, imageryInput, urlMatch)
+    // console.log("SAVE STATE METADATA: ", selectedFile.name, vibeInput, textureInput, colorInput, imageryInput, urlMatch)
     
     const state = {
         motion_mode_tmp: motion_mode,
@@ -4329,7 +4404,7 @@ function promptAndLoadState() {
 
                     // Validate JSON structure
                     if (validateJsonState(jsonData)) {
-                        console.log("json data: ", jsonData);
+                        // console.log("json data: ", jsonData);
                         loadState(jsonData); // Load the state if validation passes
                         alert(`Waveform state loaded successfully for ${jsonData.fileName}!`);
                         if (jsonData.fileName != selectedFile.name){
@@ -4389,13 +4464,13 @@ function clearColorRegions(waveform, colorsToRemove) {
 function loadState(jsonData) {
     const {motion_mode_tmp, intervalTimes, transitionTimes , formData, transitionData} = jsonData;
     motion_mode = motion_mode_tmp
-    console.log("motion_mode: ", motion_mode, motion_mode_tmp);
+    // console.log("motion_mode: ", motion_mode, motion_mode_tmp);
     const button = document.getElementById("toggleMotionButton");
     button.textContent = motion_mode_tmp + " Motion";
-    console.log("form and transdata: ", formData);
+    // console.log("form and transdata: ", formData);
     initializeWaveform(intervalTimes, transitionTimes)
     if (formData || transitionData) {
-        console.log("enter table init section")
+        // console.log("enter table init section")
         initializeTable(jsonData);
     }
 
@@ -4450,7 +4525,7 @@ function initializeWaveform(intervalTimes, transitionTimes) {
             });
             reg.on('update-end', () => refreshTable("trans"));
             reg.on('remove', () => refreshTable("trans"));
-            console.log("add transition region len idx: ", Object.keys(existingTransitionValues).length)
+            // console.log("add transition region len idx: ", Object.keys(existingTransitionValues).length)
             refreshTable("trans");
         });
     }
@@ -4468,8 +4543,8 @@ function initializeImage(imageLink){
 
 function initializeTable(jsonData) {
     const { intervalTimes, transitionTimes , formData, transitionData, songname, vibeInput, colorInput, imageryInput, textureInput, imageLink} = jsonData;
-    console.log('Initializing table with data:', formData, transitionData);
-    console.log("initialize table metadata: ", songname, vibeInput, colorInput, imageryInput, textureInput)
+    // console.log('Initializing table with data:', formData, transitionData);
+    // console.log("initialize table metadata: ", songname, vibeInput, colorInput, imageryInput, textureInput)
     // essentially do the reverse of clearExistingData + reinitialize all data structs
     
     
@@ -4489,7 +4564,7 @@ function initializeTable(jsonData) {
     // Process formData
     let index = 0;
     for (const time in formData) {
-        console.log("time: ", time)
+        // console.log("time: ", time)
         if (formData.hasOwnProperty(time)) {
             const item = formData[time];
             existingValues[index] = [
@@ -4539,4 +4614,17 @@ async function checkQueue() {
     const response = await fetch('/get_queue_length');
     const data = await response.json();
     alert(`There are ${data.queue_length} jobs in the queue.`);
+}
+
+function toggleHelpers() {
+    const helperButtons = document.getElementById('helperButtons');
+    const toggleButton = document.getElementById('toggleHelpers');
+    if (helperButtons.style.display === 'flex') {
+        helperButtons.style.display = 'none';
+        toggleButton.textContent = 'Helper Functions ▼';
+        
+    } else {
+        helperButtons.style.display = 'flex';
+        toggleButton.textContent = 'Helper Functions ▲';
+    }
 }
