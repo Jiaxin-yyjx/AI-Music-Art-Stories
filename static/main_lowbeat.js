@@ -7,7 +7,7 @@ var playheadInterval;
 let audioDuration;
 let lowEnergyBeats = {};
 let significantPoints = [];
-let motion_mode = "3D";
+let motion_mode = "2D";
 let newsigPoints = [];
 let lastClickedLabel = null;
 let transitionsAdded = false;

@@ -88,7 +88,7 @@
             </ul>
             <li>Motion: The type of camera movement applied to the video, such as 2D (panning) or 3D (rotational)</li>
             <ul>
-                <li><strong>Default: 3D</strong></li>
+                <li><strong>Default: 2D</strong></li>
             </ul>
             <li>Strength: Defines the strength of the motion, how much you feel the visual change. Varies from weak,
                 normal, strong to vstrong</li>
@@ -146,7 +146,7 @@
                 <li>Recommendations:</li>
                 <ul>
                     <li>Upward pan or rotate on crescendos or upon increase in song's energy</li>
-                    <li>Use zoom_in with sinusoidal strength for swerving effect. <a
+                    <li>Use zoom_in while having a translation_x with sinusoidal strength for swerving effect. <a
                             href="https://replicate.com/deforum-art/deforum-stable-diffusion" target="_blank">Reference
                             Here.</a></li>
                 </ul>
@@ -174,11 +174,10 @@
                 chunk of the song.</li>
             <li>Preset Defaults (subject to change for artistic vision):</li>
             <ul>
-                <li>Carry over vibe, imagery, texture, style and color for all boxes</li>
                 <li>Motion for scene intervals is zoom in by default</li>
                 <li>Motion for transitions is strong rotate right (3D) or pan right (2D) by default</li>
                 <li>Final transition is a very strong rotation (3D) or spin (2D) </li>
-                <li>Motion and Strength can have multiple different motions at the same time</li>
+                <li>Motion and Strength can have multiple different motions at the same time. And you can put in your own numbers or sin/cos/tan based equations.</li>
                 <ul>
                     <li>Motion: zoom_in,pan_right</li>
                     <li>Stength: vstrong,10*sin(2*3.14*t/10)</li>
@@ -219,7 +218,10 @@
 
         <div class="note">
             <strong>Additional Tips:</strong><br>
-            Experiment with different transition effects and segment lengths to enhance creativity.
+            <ul>
+                <li>Experiment with different transition effects and segment lengths to enhance creativity.</li>
+                <li>Zoom in and zoom out do not express strength other than the default in 3D motion. It works fine in 2D motion, so switch to that if you want more expressive motions.</li>
+            </ul>
         </div>
 
         <a href="https://github.com/Jiaxin-yyjx/SongAnalysis.git" class="button">Visit GitHub Repository</a>

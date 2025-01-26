@@ -1,3 +1,4 @@
+import warnings
 import os
 # import openai
 # from openai import OpenAI
@@ -14,6 +15,9 @@ from datetime import datetime
 import cloudinary
 import cloudinary.uploader
 import uuid
+
+warnings.simplefilter("ignore", UserWarning)  # For PySoundFile warning
+warnings.simplefilter("ignore", FutureWarning)  # For FutureWarning
 
 CLOUDINARY_URL = 'cloudinary://851777568929886:GJN-qDx1C7idDTO4SZ92FuD3mI0@hqxlqewng'
 cloudinary.config(
