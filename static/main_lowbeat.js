@@ -4193,54 +4193,6 @@ function showSignificantPoints() {
     });
 }
 
-// function toggleMotion() {
-//     const button = document.getElementById("toggleMotionButton");
-//     if (button.textContent === "3D Motion") {
-//         button.textContent = "2D Motion";
-//         motion_mode = "2D";
-//         console.log("toggle 3d to 2d")
-//         Object.keys(existingValues).forEach(key => {
-//             const valuesArray = existingValues[key];
-//             if (valuesArray && valuesArray.length >= 2) {
-//                 const index = valuesArray.length - 2;
-//                 const value = valuesArray[index];
-//                 console.log("toggle val form: ", value);
-//                 if (value.startsWith("rotate_c")) {
-//                     valuesArray[index] = value.replace("rotate_c", "spin_c");
-//                 } else if (value.startsWith("rotate")) {
-//                     valuesArray[index] = value.replace("rotate", "pan");
-//                 }
-//             }
-//         });
-
-//         // Refresh the table or UI to reflect the changes
-//         refreshTable("2D");
-//         // Add code here to handle the change to 3D motion
-//         // console.log("Switched to 2D Motion");
-//     } else {
-//         button.textContent = "3D Motion";
-//         motion_mode = "3D";
-
-//         console.log("toggle 2d to 3d")
-//         Object.keys(existingValues).forEach(key => {
-//             const valuesArray = existingValues[key];
-//             if (valuesArray && valuesArray.length >= 2) {
-//                 const index = valuesArray.length - 2;
-//                 const value = valuesArray[index];
-//                 console.log("toggle val form: ", value);
-//                 if (value.startsWith("spin")) {
-//                     valuesArray[index] = value.replace("spin", "rotate");
-//                 } else if (value.startsWith("pan")){
-//                     valuesArray[index] = value.replace("pan", "rotate");
-//                 }
-//             }
-//         });
-//         refreshTable("3D");
-//         // Add code here to handle the change to 2D motion
-//         // console.log("Switched to 3D Motion");
-//     }
-// }
-
 function toggleMotion() {
     const button = document.getElementById("toggleMotionButton");
     if (button.textContent === "3D Motion") {
