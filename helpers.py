@@ -1,19 +1,21 @@
 
 motion_magnitudes = {
-    "zoom_in": {"none": 1.00, "weak": 1.02, "normal": 1.04, "strong": 10, "vstrong": 20},
-    "zoom_out": {"none": 1.00, "weak": -0.5, "normal": -1.04, "strong": -10, "vstrong": -20},
-    "rotate_up": {"none": 0, "weak": 0.5, "normal": 1, "strong": 10, "vstrong": 20},
-    "rotate_down": {"none": 0, "weak": -0.5, "normal": -1, "strong": -10, "vstrong": -20},
-    "rotate_right": {"none": 0, "weak": 0.5, "normal": 1, "strong": 10, "vstrong": 20},
-    "rotate_left": {"none": 0, "weak": -0.5, "normal": -1, "strong": -10, "vstrong": -20},
-    "rotate_cw": {"none": 0, "weak": 0.5, "normal": 1, "strong": 10, "vstrong": 20},
-    "rotate_ccw": {"none": 0, "weak": -0.5, "normal": -1, "strong": -10, "vstrong": -20},
-    "spin_cw": {"none": 0, "weak": 0.5, "normal": 1, "strong": 10, "vstrong": 20},
-    "spin_ccw": {"none": 0, "weak": -0.5, "normal": -1, "strong": -10, "vstrong": -20},
-    "pan_up": {"none": 0, "weak": 0.5, "normal": 1, "strong": 10, "vstrong": 20},
-    "pan_down": {"none": 0, "weak": -0.5, "normal": -1, "strong": -10, "vstrong": -20},
-    "pan_right": {"none": 0, "weak": 0.5, "normal": 1, "strong": 10, "vstrong": 20},
-    "pan_left": {"none": 0, "weak": -0.5, "normal": -1, "strong": -10, "vstrong": -20}
+    "zoom_in": {"none": 1.00, "weak": 1.02, "normal": 1.04, "strong": 1.2, "vstrong": 1.6},
+    "zoom_out": {"none": 1.00, "weak": 0.98, "normal": 0.96, "strong": 0.8, "vstrong": 0.6},
+
+    "rotate_up": {"none": 0, "weak": 0.5, "normal": 1, "strong": 2, "vstrong": 4},
+    "rotate_down": {"none": 0, "weak": -0.5, "normal": -1, "strong": -2, "vstrong": -4},
+    "rotate_right": {"none": 0, "weak": 0.5, "normal": 1, "strong": 2, "vstrong": 4},
+    "rotate_left": {"none": 0, "weak": -0.5, "normal": -1, "strong": -2, "vstrong": -4},
+    "rotate_cw": {"none": 0, "weak": 0.5, "normal": 2, "strong": 20, "vstrong": 40},
+    "rotate_ccw": {"none": 0, "weak": -0.5, "normal": -2, "strong": -20, "vstrong": -40},
+
+    "spin_cw": {"none": 0, "weak": -5, "normal": -10, "strong": -20, "vstrong": -30},
+    "spin_ccw": {"none": 0, "weak": 5, "normal": 10, "strong": 20, "vstrong": 30},
+    "pan_up": {"none": 0, "weak": 10, "normal": 15, "strong": 25, "vstrong": 40},
+    "pan_down": {"none": 0, "weak": -10, "normal": -15, "strong": -25, "vstrong": -40},
+    "pan_right": {"none": 0, "weak": -10, "normal": -15, "strong": -25, "vstrong": -40},
+    "pan_left": {"none": 0, "weak": 10, "normal": 15, "strong": 25, "vstrong": 40}
 }
 
 
@@ -47,6 +49,15 @@ def split_and_pair_values(data):
     paired_values = []
     for motion, strength in zip(motions, strengths):
         paired_values.append({'motion': motion.strip(), 'strength': strength.strip()})
+    print("before check zoom: ", paired_values)
+
+    has_spin_or_pan = any(motion_entry['motion'].startswith(('spin', 'pan')) for motion_entry in paired_values)
+    
+    # Check if any motion starts with "zoom"
+    has_zoom_motion = any(motion_entry['motion'].startswith('zoom') for motion_entry in paired_values)
+    if has_spin_or_pan and not has_zoom_motion:
+        paired_values.append({'motion': 'zoom_in', 'strength': '1.0'})
+    print("Paired vals split pair: ", paired_values)
 
     return paired_values
 
@@ -72,13 +83,23 @@ def get_motion_and_speed(time, form_data):
     # Validate and pair motion and strength
     motions = []
     for motion, strength in zip(motion_list, strength_list):
+        # Validate motion
         if motion not in motion_options:
             print(f"Invalid motion option '{motion}' for time {time}. Using default 'none'.")
             motion = 'none'
-        if strength not in strength_options:
-            print(f"Invalid strength option '{strength}' for time {time}. Using default 'normal'.")
-            strength = 'normal'
-        motions.append({'motion': motion.strip(), 'strength': strength.strip(), 'speed': speed.strip()})
+
+        # Handle numerical or string strength values
+        try:
+            # Attempt to convert strength to a float if it's a valid numerical value
+            strength = float(strength)
+        except ValueError:
+            # If conversion fails, check if it's in strength options
+            if strength not in strength_options:
+                print(f"Invalid strength option '{strength}' for time {time}. Using default 'normal'.")
+                strength = 'normal'
+
+        # Add validated and processed values to motions list
+        motions.append({'motion': motion.strip(), 'strength': strength, 'speed': speed.strip()})
 
     return motions
 
@@ -107,17 +128,19 @@ def get_motion_data(form_data, trans_data, time_intervals, interval_strings, sce
         print('Start time: ', start_time)
         print('end time: ', end_time)
         if end_time in start_times_trans:
+            # INDICATES THE START OF A TRANSITION
+            print("end time in transition start times")
             in_transition = True
             closest_end = get_closest_form_data(end_time, form_data)
             closest_end = str(closest_end)
             closest_end_backup = closest_end
-            try:
-                if len(closest_end.split('.')[1]) == 1:
-                    closest_end = closest_end + '0'
-                    print("closest time, only 1 decimal: ", closest_end)
-            except:
-                closest_end = closest_end + '.00'
-                print("closest time no decimal: ", closest_end)
+            # try:
+            if len(closest_end.split('.')[1]) == 1 and int(closest_end.split('.')[1]) == 0:
+                closest_end = closest_end.split('.')[0]
+                print("closest time, only 1 decimal 0: ", closest_end)
+            # except:
+            #     closest_end = closest_end + '.00'
+            #     print("closest time no decimal: ", closest_end)
 
             try:
                 motion_data.append(split_and_pair_values(form_data[str(closest_end)]))
@@ -137,10 +160,13 @@ def get_motion_data(form_data, trans_data, time_intervals, interval_strings, sce
         #     # motion_data.append(split_and_pair_values())
         #     print("end transition")
 
-        if start_time in time_intervals and start_time != 0 and end_time in time_intervals and start_time != end_time and in_transition == False:    
+        if (start_time in time_intervals or start_time == '0.0') and end_time in time_intervals and start_time != end_time and in_transition == False:    
+            # Normal intervals
+            print("normal time scene")
             motion_data.append(split_and_pair_values(form_data[str(end_time)]))
             print("SPLIT PAIR: ", split_and_pair_values(form_data[str(end_time)]))
         elif in_transition == True:
+            print("in transition: ")
             # if start_time in start_times_trans:
             #     start_trans_idx = start_times_trans.index(start_time)
             #     transition_end_time = end_times_trans[start_trans_idx]
@@ -428,7 +454,14 @@ def calculate_frames(scene_change_times, time_intervals, motion_data, total_song
             
 
             def get_motion_value(motion, strength):
-                return motion_magnitudes.get(motion, {}).get(strength, strength)
+                stren = 0
+                try: 
+                    stren = float(strength)
+                except ValueError:
+                    # If conversion fails, use the `.get` method
+                    stren = motion_magnitudes.get(motion, {}).get(strength, strength)
+                
+                return stren
 
             motion_value = get_motion_value(motion, strength)
 
@@ -702,7 +735,7 @@ def create_deforum_prompt(motion_data, final_anim_frames, motion_mode, prompts,s
         "translation_x": ", ".join(motion_data['translation_x']),
         "translation_y": ", ".join(motion_data['translation_y']),
         "translation_z": "0:(10)",
-        "animation_mode": "3D",
+        "animation_mode": motion_mode,
         "guidance_scale": 7,
         "noise_schedule": "0: (0.02)",
         "sigma_schedule": "0: (1.0)",
@@ -747,6 +780,78 @@ def create_deforum_prompt(motion_data, final_anim_frames, motion_mode, prompts,s
         "hybrid_video_comp_mask_auto_contrast_cutoff_low_schedule": "0:(0)",
         "hybrid_video_comp_mask_auto_contrast_cutoff_high_schedule": "0:(100)"
     }
+    # input={
+    #     "fov": 40,
+    #     "fps": 15,
+    #     "seed": 868591112,
+    #     "zoom": "0:(0.85), 27:(0.85), 28:(0), 29:(1.2)",
+    #     "angle": "0:(0)",
+    #     "width": 512,
+    #     "border": "replicate",
+    #     "height": 512,
+    #     "sampler": "dpmpp_2m",
+    #     "use_init": False,
+    #     "use_mask": False,
+    #     "clip_name": "ViT-L/14",
+    #     "far_plane": 10000,
+    #     "init_image": "https://raw.githubusercontent.com/ct3008/ct3008.github.io/main/images/isee1.jpeg",
+    #     "max_frames": 50,
+    #     "near_plane": 200,
+    #     "invert_mask": False,
+    #     "midas_weight": 0.3,
+    #     "padding_mode": "border",
+    #     "rotation_3d_x": "0:(0)",
+    #     "rotation_3d_y": "0:(0)",
+    #     "rotation_3d_z": "0:(0)",
+    #     "sampling_mode": "bicubic",
+    #     "translation_x": "0:(0)",
+    #     "translation_y": "0:(0)",
+    #     "translation_z": "0:(10)",
+    #     "animation_mode": "2D",
+    #     "guidance_scale": 7,
+    #     "noise_schedule": "0: (0.02)",
+    #     "sigma_schedule": "0: (1.0)",
+    #     "use_mask_video": False,
+    #     "amount_schedule": "0: (0.2)",
+    #     "color_coherence": "Match Frame 0 LAB",
+    #     "kernel_schedule": "0: (5)",
+    #     "model_checkpoint": "Protogen_V2.2.ckpt",
+    #     "animation_prompts": "0: a beautiful apple, trending on Artstation",
+    #     "contrast_schedule": "0: (1.0)",
+    #     "diffusion_cadence": "1",
+    #     "extract_nth_frame": 1,
+    #     "resume_timestring": "20220829210106",
+    #     "strength_schedule": "0: (0.65)",
+    #     "use_depth_warping": True,
+    #     "threshold_schedule": "0: (0.0)",
+    #     "flip_2d_perspective": False,
+    #     "hybrid_video_motion": "None",
+    #     "num_inference_steps": 50,
+    #     "perspective_flip_fv": "0:(53)",
+    #     "interpolate_x_frames": 4,
+    #     "perspective_flip_phi": "0:(t%15)",
+    #     "hybrid_video_composite": False,
+    #     "interpolate_key_frames": False,
+    #     "perspective_flip_gamma": "0:(0)",
+    #     "perspective_flip_theta": "0:(0)",
+    #     "resume_from_timestring": False,
+    #     "hybrid_video_flow_method": "Farneback",
+    #     "overwrite_extracted_frames": True,
+    #     "hybrid_video_comp_mask_type": "None",
+    #     "hybrid_video_comp_mask_inverse": False,
+    #     "hybrid_video_comp_mask_equalize": "None",
+    #     "hybrid_video_comp_alpha_schedule": "0:(1)",
+    #     "hybrid_video_generate_inputframes": False,
+    #     "hybrid_video_comp_save_extra_frames": False,
+    #     "hybrid_video_use_video_as_mse_image": False,
+    #     "color_coherence_video_every_N_frames": 1,
+    #     "hybrid_video_comp_mask_auto_contrast": False,
+    #     "hybrid_video_comp_mask_contrast_schedule": "0:(1)",
+    #     "hybrid_video_use_first_frame_as_init_image": True,
+    #     "hybrid_video_comp_mask_blend_alpha_schedule": "0:(0.5)",
+    #     "hybrid_video_comp_mask_auto_contrast_cutoff_low_schedule": "0:(0)",
+    #     "hybrid_video_comp_mask_auto_contrast_cutoff_high_schedule": "0:(100)"
+    #     }
 
     return input
 

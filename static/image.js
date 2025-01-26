@@ -1,21 +1,57 @@
+
+
 // const dropArea = document.getElementById("drop-area");
 // const inputFile = document.getElementById("input-file");
 // const imageView = document.getElementById("img-view");
 
+// let draggedElement = null;
+
+// // Upload image when a file is selected
 // inputFile.addEventListener("change", uploadImage);
 
-// function uploadImage() {
-//     let imgLink = URL.createObjectURL(inputFile.files[0]);
-//     console.log("image link: " + imgLink);
-//     setImage(imgLink);
+// async function uploadImage() {
+//     const file = inputFile.files[0];
+//     if (!file) {
+//         console.error("No file selected!");
+//         return;
+//     }
+
+//     try {
+//         // Create a FormData object to send the file
+//         const formData = new FormData();
+//         formData.append("image", file);
+
+//         // Send the file to your backend's upload endpoint
+//         const response = await fetch("/upload_image", {
+//             method: "POST",
+//             body: formData,
+//         });
+
+//         if (!response.ok) {
+//             throw new Error(`Failed to upload image: ${response.statusText}`);
+//         }
+
+//         // Parse the response to get the Cloudinary URL
+//         const data = await response.json();
+//         const imgLink = data.url; // This assumes your backend sends the Cloudinary `secure_url`
+
+//         console.log("Uploaded image URL:", imgLink);
+//         setImage(imgLink);
+//     } catch (error) {
+//         console.error("Error uploading image:", error);
+//     }
 // }
 
 // // Handles dragging an image from file or image elements
-// dropArea.addEventListener("dragover", function (e) {
+// dropArea.addEventListener("dragover", (e) => {
 //     e.preventDefault();
+//     if (draggedElement) {
+//         draggedElement.classList.remove("dragging");
+//         draggedElement = null;
+//     }
 // });
 
-// dropArea.addEventListener("drop", function (e) {
+// dropArea.addEventListener("drop", (e) => {
 //     e.preventDefault();
 
 //     // Check if the dropped item is a file or an <img> element
@@ -38,9 +74,30 @@
 //         }
 
 //         if (imgSrc) {
-//             console.log("Image link from drag: " + imgSrc);
+//             console.log("Image link from drag:", imgSrc);
 //             setImage(imgSrc);
 //         }
+//     }
+
+//     // Reset dragging state
+//     if (draggedElement) {
+//         draggedElement.classList.remove("dragging");
+//         draggedElement = null;
+//     }
+// });
+
+// // Add drag event listeners to the draggable element
+// document.addEventListener("dragstart", (e) => {
+//     if (e.target.tagName === "IMG") {
+//         draggedElement = e.target;
+//         e.target.classList.add("dragging");
+//     }
+// });
+
+// document.addEventListener("dragend", (e) => {
+//     if (draggedElement) {
+//         draggedElement.classList.remove("dragging");
+//         draggedElement = null;
 //     }
 // });
 
@@ -51,11 +108,13 @@
 //     imageView.style.border = 0;
 // }
 
-
 const dropArea = document.getElementById("drop-area");
 const inputFile = document.getElementById("input-file");
 const imageView = document.getElementById("img-view");
 
+let draggedElement = null;
+
+// Upload image when a file is selected
 inputFile.addEventListener("change", uploadImage);
 
 async function uploadImage() {
@@ -92,11 +151,11 @@ async function uploadImage() {
 }
 
 // Handles dragging an image from file or image elements
-dropArea.addEventListener("dragover", function (e) {
+dropArea.addEventListener("dragover", (e) => {
     e.preventDefault();
 });
 
-dropArea.addEventListener("drop", function (e) {
+dropArea.addEventListener("drop", (e) => {
     e.preventDefault();
 
     // Check if the dropped item is a file or an <img> element
@@ -122,6 +181,27 @@ dropArea.addEventListener("drop", function (e) {
             console.log("Image link from drag:", imgSrc);
             setImage(imgSrc);
         }
+    }
+
+    // Reset dragging state
+    if (draggedElement) {
+        draggedElement.classList.remove("dragging");
+        draggedElement = null;
+    }
+});
+
+// Add drag event listeners to the draggable element
+document.addEventListener("dragstart", (e) => {
+    if (e.target.tagName === "IMG") {
+        draggedElement = e.target;
+        e.target.classList.add("dragging");
+    }
+});
+
+document.addEventListener("dragend", (e) => {
+    if (draggedElement) {
+        draggedElement.classList.remove("dragging");
+        draggedElement = null;
     }
 });
 
