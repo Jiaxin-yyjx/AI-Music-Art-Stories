@@ -1236,7 +1236,7 @@ def get_video(filename):
         return jsonify({"error": "adjustments parameter is missing."}), 400
 
     # Prepare the output filename
-    output_filename = "./downloaded_videos/output_combined.mp4"
+    output_filename = f"./downloaded_videos/{filename}_output_combined.mp4"
 
     # Call the function to process the video with speed adjustments
     try:
@@ -1245,7 +1245,7 @@ def get_video(filename):
         return jsonify({"error": str(e)}), 500
 
     # Return the combined video file as an attachment
-    return send_file(output_filename, as_attachment=True, download_name="output_combined.mp4")
+    return send_file(output_filename, as_attachment=True, download_name=f"{filename}_output_combined.mp4")
 
 
 def process_video_with_speed_adjustments(video_url, adjustments, audio_filename, output_filename):
