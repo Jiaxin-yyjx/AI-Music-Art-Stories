@@ -1276,12 +1276,12 @@ def download_video(api_url, save_path):
     response = requests.get(api_url, stream=True, verify=False)
     print(f"Response code: {response.status_code}")
     if response.status_code == 200:
-        print("Downloading video started.")
+        # print("Downloading video started.")
         with open(save_path, "wb") as f:
             for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
-        files = os.listdir('.')
-        print(f"Files in current directory: {files}")
+        # files = os.listdir('.')
+        # print(f"Files in current directory: {files}")
     else:
         raise Exception(f"Failed to download video: {response.status_code}")
 
@@ -1374,7 +1374,7 @@ def combine_audio_video(audio_filename, video_file, output_filename):
         audio_path = f"./{audio_filename}"
         video_clip = VideoFileClip(video_file)
         audio_clip = AudioFileClip(audio_path)
-        print("COMBINE AUDIO VIDEO")
+        # print("COMBINE AUDIO VIDEO")
         print(audio_path)
         print(video_clip)
         print(audio_clip)
