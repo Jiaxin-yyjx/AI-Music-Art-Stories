@@ -59,6 +59,7 @@ def save_api_key():
         
         if "disco" == api_key.lower().strip():
             api_key = os.getenv("LAB_DISCO_API_KEY")
+            api_key_storage = api_key
             redis_conn.set("api_key", api_key)
             print("DISCO KEYWORD: ", api_key)
         else:
@@ -1269,7 +1270,7 @@ def process_video_with_speed_adjustments(video_url, adjustments, audio_filename,
 
 def download_video(api_url, save_path):
     print("download")
-    response = requests.get(api_url, stream=True)
+    response = requests.get(api_url, stream=True,verify=False)
     if response.status_code == 200:
         with open(save_path, "wb") as f:
             for chunk in response.iter_content(chunk_size=8192):
