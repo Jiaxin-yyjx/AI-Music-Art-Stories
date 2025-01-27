@@ -18,8 +18,8 @@ import cloudinary.uploader
 import uuid
 import subprocess
 from moviepy.editor import VideoFileClip, AudioFileClip
-import logging
-logging.basicConfig(level=logging.DEBUG)
+# import logging
+# logging.basicConfig(level=logging.DEBUG)
 
 
 warnings.simplefilter("ignore", UserWarning)  # For PySoundFile warning
@@ -1274,14 +1274,14 @@ def process_video_with_speed_adjustments(video_url, adjustments, audio_filename,
 def download_video(api_url, save_path):
     print("Downloading video...")
     response = requests.get(api_url, stream=True, verify=False)
-    logging.debug(f"Response code: {response.status_code}")
+    print(f"Response code: {response.status_code}")
     if response.status_code == 200:
-        logging.debug("Downloading video started.")
+        print("Downloading video started.")
         with open(save_path, "wb") as f:
             for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
         files = os.listdir('.')
-        logging.debug(f"Files in current directory: {files}")
+        print(f"Files in current directory: {files}")
     else:
         raise Exception(f"Failed to download video: {response.status_code}")
 
@@ -1371,8 +1371,6 @@ def adjust_video_speed(input_video, adjustments, output_video):
 
 def combine_audio_video(audio_filename, video_file, output_filename):
     try:
-        files = os.listdir('.')
-        print("Files in current directory:", files)
         audio_path = f"./{audio_filename}"
         video_clip = VideoFileClip(video_file)
         audio_clip = AudioFileClip(audio_path)
