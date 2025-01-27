@@ -46,11 +46,18 @@ brew update
 brew install redis
 redis-server
 ```
-You may need to install redis on your computer if you haven't already. If you run into issues, check redis_config.py to ensure localhost url is set correctly.
+You may need to install redis on your computer if you haven't already. If you run into issues, check redis_config.py to ensure localhost url is set correctly.brew update and brew install only need to be run the first time.
 
 Follow these instructions: https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/
 
-5.5) Access the redis cli to check the status of workers (optional)
+6) Run helper function in a separate terminal (in one separate terminal)
+```bash
+. .venv/bin/activate
+python3.12 worker.py
+```
+
+
+7) Access the redis cli to check the status of workers (optional)
 ```bash
 pip install rq-dashboard
 rq-dashboard
@@ -60,10 +67,26 @@ If you get SSL verification issues run:
 pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host=files.pythonhosted.org rq-dashboard
 rq-dashboard
 ```
+Pip install only needs to be run once.
 
-
-6) Run helper function in a separate terminal (in one separate terminal)
+----------------------------------------------------------------
+If you run into issues, ensure that you are using Python 3.12.8 specifically. Check using when your environment variable is activated.
 ```bash
-python3.12 worker.py
+python3.12 --version
 ```
+If it does not return 3.12.8, download it using the link above. If you see a version of python other than 3.12, simply use python3.12 to run any commands. If you have another version of python3.12 like 3.12.2, follow these steps to change the default.
 
+## Step 1: Locate the Python 3.12.8 Binary
+To locate the Python 3.12.8 binary installed on your system, run the following command:
+
+```bash
+ls /usr/local/bin/python3.12
+```
+If the binary is correctly installed, you should see this output: ```/usr/local/bin/python3.12```
+
+## Step 2: Update the PATH to Prioritize Python 3.12.8
+1) Open your shell configuration file (e.g., ~/.zshrc for Zsh or ~/.bashrc for Bash): ```vim ~/.zshrc``` or ```vim ~/.bashrc```
+2) Add the following line to the top of the file to prioritize Python 3.12.8: ```export PATH="/usr/local/bin:$PATH"```
+3) Save and close the file by pressing the ```esc``` key and then typing ```:x``` and press enter.
+4) Apply the changes: ```source ~/.zshrc``` or ```source ~/.bashrc```
+5) Verify the correct version again ```python3.12 --version```

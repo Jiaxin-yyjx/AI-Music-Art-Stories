@@ -23,6 +23,7 @@ let existingTransitionValues = {};
 let existingValues = {};
 let added = true;
 let selectedFile = null;
+let audioData = null;
 
 const vibes = ['calm', 'epic', 'aggressive', 'chill', 'dark', 'energetic', 'ethereal', 'happy', 'romantic', 'sad', 'scary', 'sexy', 'uplifting'];
 const textures = ['painting', 'calligraphy brush ink stroke', 'pastel watercolor on canvas', 'charcoal drawing', 'pencil drawing', 'impasto palette knife painting', 'mosaic', 'jagged/irregular', 'rubbed graphite on paper', 'digital glitch', 'splattered paint', 'graffiti', 'ink blots'];
@@ -1864,7 +1865,46 @@ function checkJobStatus(jobId) {
 
 // Handle the job result
 function handleJobResult(statusData) {
-    console.log("status data: ", statusData);
+    // console.log("status data:", statusData);
+    const filename = statusData.result.output.filename;  // The video filename provided in the response
+    // console.log('filename: ', filename)
+    // Create the request URL
+    const videoUrl = statusData.result.output.output_url
+    // console.log('video url: ', videoUrl)
+    const adjustments = statusData.result.output.adjustments
+    
+
+    const data = {
+        'filename': filename,
+        'video_url': statusData.result.output.output_url,
+        'adjustments': adjustments
+    };
+    // console.log("HANDLE JOB data: " + data);
+    fetch(`/get_video/${filename}`, {
+        method: 'POST',  // Change to POST
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)  // Pass video_url in the request body
+    })
+        .then(response => response.blob())  // Get the video file as a blob
+        .then(blob => {
+            // Create a URL for the blob
+            const downloadUrl = URL.createObjectURL(blob);
+            
+            // Create a link element and trigger the download
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = `${filename}_output_combined.mp4`;  // Specify the downloaded file name
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        })
+        .catch(error => {
+            console.error('Error downloading the video:', error);
+        });
+
+    // console.log("status data: ", statusData);
     if (statusData.result.error) {
         console.log("error: ", statusData.result.error);
         alert(`Error: ${statusData.result.error}. Check API dashboard and try again.`);
@@ -1916,7 +1956,7 @@ function buildResultHTML(result) {
     
 
     if (result.output_url) {
-        resultHTML += `<h3>Output:</h3><p><a href="${result.output_url}" target="_blank">Click here to view output</a></p>`;
+        resultHTML += `<h3>Raw Replicate Output:</h3><p><a href="${result.output_url}" target="_blank">Click here to view output</a></p>`;
     }
 
     return resultHTML;
@@ -1987,7 +2027,8 @@ function processTable() {
         song_len: audioDuration,
         motion_mode: motion_mode,
         seed: seed,
-        input_image_url: backgroundImageUrl
+        input_image_url: backgroundImageUrl,
+        filename: selectedFile.name
     };
     document.getElementById('processing').style = "display: block;"
     const loadingIndicator = document.getElementById("loadingIndicator_process");
@@ -2030,8 +2071,8 @@ function downloadPrompt() {
     // console.log("FORM DATA: ", formData);
     const transitionsData = gatherTransitionData(formData);
     let seed = document.getElementById("seed").value;
-    document.getElementById('processedDataContainer').innerHTML = '';
-    document.getElementById('processedDataContainer').style = "border: none;";
+    // document.getElementById('processedDataContainer').innerHTML = '';
+    // document.getElementById('processedDataContainer').style = "border: none;";
     seed = parseInt(seed, 10);
     if (isNaN(seed)) {
         seed = 868591112; // Default value
@@ -2091,6 +2132,8 @@ function downloadPrompt() {
 
 function clearExistingData() {
     //Clear out Fields
+    const playPauseButton = document.getElementById("playPauseButton");
+    
     existingTransitionValues = {};
     existingValues = {};
     refreshTable();
@@ -2475,8 +2518,24 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
+let playPauseClickHandler;
 function playpauseControl(playPauseButton) {
-    playPauseButton.addEventListener('click', () => {
+
+    // playPauseButton.addEventListener('click', () => {
+    //     if (waveform.isPlaying()) {
+    //         playPauseButton.innerHTML = '▶';
+    //         waveform.pause();
+    //     } else {
+    //         playPauseButton.innerHTML = '⏸';
+    //         waveform.play();
+    //     }
+    // });
+    if (playPauseClickHandler) {
+        playPauseButton.removeEventListener('click', playPauseClickHandler);
+    }
+
+    // Define the click handler
+    playPauseClickHandler = () => {
         if (waveform.isPlaying()) {
             playPauseButton.innerHTML = '▶';
             waveform.pause();
@@ -2484,7 +2543,10 @@ function playpauseControl(playPauseButton) {
             playPauseButton.innerHTML = '⏸';
             waveform.play();
         }
-    });
+    };
+
+    // Attach the click handler
+    playPauseButton.addEventListener('click', playPauseClickHandler);
     waveform.on('finish', () => {
         playPauseButton.innerHTML = '▶';
     });
@@ -2595,12 +2657,15 @@ function processAudio() {
         return;
     }
 
-    const formData = new FormData();
-    formData.append('audioFile', fileInput.files[0]);
+    // const formData = new FormData();
+    // formData.append('audioFile', fileInput.files[0]);
+    audioData = new FormData();
+    audioData.append('audioFile', fileInput.files[0]);
+    
 
     fetch('/upload_audio', {
         method: 'POST',
-        body: formData
+        body: audioData
     })
         .then(response => response.json())
         .then(data => {
