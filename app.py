@@ -18,6 +18,9 @@ import cloudinary.uploader
 import uuid
 import subprocess
 from moviepy.editor import VideoFileClip, AudioFileClip
+# import logging
+# logging.basicConfig(level=logging.DEBUG)
+
 
 warnings.simplefilter("ignore", UserWarning)  # For PySoundFile warning
 warnings.simplefilter("ignore", FutureWarning)  # For FutureWarning
@@ -1236,7 +1239,7 @@ def get_video(filename):
         return jsonify({"error": "adjustments parameter is missing."}), 400
 
     # Prepare the output filename
-    output_filename = f"./downloaded_videos/{filename}_output_combined.mp4"
+    output_filename = f"./{filename}_output_combined.mp4"
 
     # Call the function to process the video with speed adjustments
     try:
@@ -1269,15 +1272,18 @@ def process_video_with_speed_adjustments(video_url, adjustments, audio_filename,
 
 
 def download_video(api_url, save_path):
-    print("download")
-    response = requests.get(api_url, stream=True,verify=False)
+    print("Downloading video...")
+    response = requests.get(api_url, stream=True, verify=False)
+    print(f"Response code: {response.status_code}")
     if response.status_code == 200:
+        # print("Downloading video started.")
         with open(save_path, "wb") as f:
             for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
+        # files = os.listdir('.')
+        # print(f"Files in current directory: {files}")
     else:
         raise Exception(f"Failed to download video: {response.status_code}")
-
 
 def adjust_video_speed(input_video, adjustments, output_video):
     print("adjusting video speed")
@@ -1368,6 +1374,10 @@ def combine_audio_video(audio_filename, video_file, output_filename):
         audio_path = f"./{audio_filename}"
         video_clip = VideoFileClip(video_file)
         audio_clip = AudioFileClip(audio_path)
+        # print("COMBINE AUDIO VIDEO")
+        print(audio_path)
+        print(video_clip)
+        print(audio_clip)
 
         final_clip = video_clip.set_audio(audio_clip)
         final_clip.write_videofile(output_filename, codec="libx264", audio_codec="aac")
