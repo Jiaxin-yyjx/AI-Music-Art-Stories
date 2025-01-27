@@ -5,9 +5,10 @@ import os
 import librosa
 import numpy as np
 import tempfile
-from flask import Flask, jsonify, request, render_template, session
+from flask import Flask, jsonify, request, render_template, session, send_file, request
 import replicate
 from dotenv import load_dotenv
+import requests
 from tasks import long_running_task, process_audio, generate_image_task, download_prompt
 from queue_config import queue, redis_conn
 from flask_cors import CORS
@@ -15,6 +16,8 @@ from datetime import datetime
 import cloudinary
 import cloudinary.uploader
 import uuid
+import subprocess
+from moviepy.editor import VideoFileClip, AudioFileClip
 
 warnings.simplefilter("ignore", UserWarning)  # For PySoundFile warning
 warnings.simplefilter("ignore", FutureWarning)  # For FutureWarning
@@ -56,6 +59,7 @@ def save_api_key():
         
         if "disco" == api_key.lower().strip():
             api_key = os.getenv("LAB_DISCO_API_KEY")
+            api_key_storage = api_key
             redis_conn.set("api_key", api_key)
             print("DISCO KEYWORD: ", api_key)
         else:
@@ -63,7 +67,7 @@ def save_api_key():
             api_key_storage = api_key
             print("API KEY: ", api_key_storage)
             # print("Stored in environ before: ", os.getenv("LAB_DISCO_API_KEY"))
-            os.environ["LAB_DISCO_API_KEY"] = api_key_storage
+            # os.environ["LAB_DISCO_API_KEY"] = api_key_storage
             print("Stored in environ after: ", os.getenv("LAB_DISCO_API_KEY"))
             redis_conn.set("api_key", api_key)
             print("Stored in redis: ", redis_conn.get("api_key").decode('utf-8'))
@@ -161,6 +165,8 @@ def upload_file():
 @app.route('/upload_audio', methods=['POST'])
 def upload_audio():
     file = request.files['audioFile']
+    print("FILE: ")
+    print(file)
     if file:
         file_path = os.path.join('.', file.filename)
         file.save(file_path)
@@ -1062,290 +1068,6 @@ def generate_prompt_completion(client, prompt):
     )
     return completion.choices[0].message['content']
 
-    
-# def create_deforum_prompt(motion_data, final_anim_frames, motion_mode, prompts,seed):
-#     # print("HERE ", ', '.join(motion_data['rotation_3d_y']))
-#     # print(motion_data['rotation_3d_y'][0:-1])
-#     input={
-#         "fov": 40,
-#         "fps": 15,
-#         "seed": seed,
-#         "zoom": ", ".join(motion_data['zoom']),
-#         "angle": ", ".join(motion_data['angle']),
-#         "width": 512,
-#         "border": "replicate",
-#         "height": 512,
-#         "sampler": "dpmpp_2m",
-#         "use_init": True,
-#         "use_mask": False,
-#         "clip_name": "ViT-L/14",
-#         "far_plane": 10000,
-#         # "init_image": "https://raw.githubusercontent.com/ct3008/ct3008.github.io/main/images/isee1.jpeg",
-#         "init_image": "https://replicate.delivery/pbxt/bb6BIQ1vtyIhOhe6p8ZaeeEg4rYm2k9UNTbipzxzzT2xw2pnA/out-0.png",
-#         "max_frames": final_anim_frames[-1],
-#         "near_plane": 200,
-#         "invert_mask": False,
-#         "midas_weight": 0.3,
-#         "padding_mode": "border",
-#         "rotation_3d_x": ", ".join(motion_data['rotation_3d_x']),
-#         "rotation_3d_y": ", ".join(motion_data['rotation_3d_y']),
-#         "rotation_3d_z": ", ".join(motion_data['rotation_3d_z']),
-#         "sampling_mode": "bicubic",
-#         "translation_x": ", ".join(motion_data['translation_x']),
-#         "translation_y": ", ".join(motion_data['translation_y']),
-#         "translation_z": "0:(10)",
-#         "animation_mode": "3D",
-#         "guidance_scale": 7,
-#         "noise_schedule": "0: (0.02)",
-#         "sigma_schedule": "0: (1.0)",
-#         "use_mask_video": False,
-#         "amount_schedule": "0: (0.2)",
-#         "color_coherence": "Match Frame 0 RGB",
-#         "kernel_schedule": "0: (5)",
-#         "model_checkpoint": "Protogen_V2.2.ckpt",
-#         "animation_prompts": prompts,
-#         "contrast_schedule": "0: (1.0)",
-#         "diffusion_cadence": "1",
-#         "extract_nth_frame": 1,
-#         "resume_timestring": "",
-#         "strength_schedule": "0: (0.65)",
-#         "use_depth_warping": True,
-#         "threshold_schedule": "0: (0.0)",
-#         "flip_2d_perspective": False,
-#         "hybrid_video_motion": "None",
-#         "num_inference_steps": 50,
-#         "perspective_flip_fv": "0:(53)",
-#         "interpolate_x_frames": 4,
-#         "perspective_flip_phi": "0:(t%15)",
-#         "hybrid_video_composite": False,
-#         "interpolate_key_frames": False,
-#         "perspective_flip_gamma": "0:(0)",
-#         "perspective_flip_theta": "0:(0)",
-#         "resume_from_timestring": False,
-#         "hybrid_video_flow_method": "Farneback",
-#         "overwrite_extracted_frames": True,
-#         "hybrid_video_comp_mask_type": "None",
-#         "hybrid_video_comp_mask_inverse": False,
-#         "hybrid_video_comp_mask_equalize": "None",
-#         "hybrid_video_comp_alpha_schedule": "0:(1)",
-#         "hybrid_video_generate_inputframes": False,
-#         "hybrid_video_comp_save_extra_frames": False,
-#         "hybrid_video_use_video_as_mse_image": False,
-#         "color_coherence_video_every_N_frames": 1,
-#         "hybrid_video_comp_mask_auto_contrast": False,
-#         "hybrid_video_comp_mask_contrast_schedule": "0:(1)",
-#         "hybrid_video_use_first_frame_as_init_image": True,
-#         "hybrid_video_comp_mask_blend_alpha_schedule": "0:(0.5)",
-#         "hybrid_video_comp_mask_auto_contrast_cutoff_low_schedule": "0:(0)",
-#         "hybrid_video_comp_mask_auto_contrast_cutoff_high_schedule": "0:(100)"
-#     }
-
-#     return input
-
-def process_video_with_speed_adjustments(api_url, adjustments, song_name):
-    # Step 1: Download the video from the API URL
-    video_file = "downloaded_video.mp4"
-    download_video(api_url, video_file)
-    output_dir = "final_outputs"
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    output_file = f"./{output_dir}/" + song_name.replace(' ','_').split('.')[0] + "_output.mp4"
-    
-    # Step 2: Adjust the playback speed of intervals
-    # adjust_video_speed(video_file, adjustments, output_file)
-    
-    # Step 3: (Optional) Upload the corrected video to a storage service or return its path
-    return output_file
-
-def download_video(api_url, save_path):
-    """Download video from a given URL."""
-    response = requests.get(api_url, stream=True)
-    if response.status_code == 200:
-        with open(save_path, "wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
-    else:
-        raise Exception(f"Failed to download video: {response.status_code}")
-
-def adjust_video_speed(input_video, adjustments, output_video):
-    """Apply playback speed adjustments to the video."""
-    segments = []
-    # subprocess.run([
-    #     "ffmpeg", "-i", input_video, "-vf", "select='between(n,120,190)'", "-vsync", "vfr", "-c:v", "libx264", "precise_segment.mp4"
-
-    # ])
-    print(adjustments)
-    for i, adj in enumerate(adjustments):
-        start_frame = adj["start_frame"]
-        end_frame = adj["end_frame"]
-        speed_factor_og = adj["speed_factor"]
-
-        # Calculate start and end times
-        start_time = start_frame / 15  # Assuming 15 fps
-        end_time = end_frame / 15
-        speed_factor = (end_time-start_time)/(adj["end_time"]-adj["start_time"])
-        print("speed_factor: ", speed_factor, speed_factor_og)
-        end_time = round(end_time,2)
-        start_time = round(start_time,2)
-        print("start time: ", start_time, " end time: ", end_time)
-        print("u start time: ", start_time/speed_factor, " u end time: ", end_time/speed_factor)
-        print("real start: ", adj["start_time"], " real final: ", adj["end_time"])
-        print("-------------------------")
-        # start_time = adj["start_time"]
-        # end_time = adj["end_time"]
-
-        # Extract segment
-        segment_file = f"segment_{i}.mp4"
-        subprocess.run([
-            "ffmpeg", "-i", input_video, 
-            "-vf", f"select='between(n,{start_frame},{end_frame})'", 
-            "-vsync", "vfr", 
-            "-c:v", "libx264", 
-            segment_file
-        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        # Adjust playback speed
-        adjusted_segment = f"adjusted_segment_{i}.mp4"
-        subprocess.run([
-            "ffmpeg", "-i", segment_file, 
-            "-r", str(15), 
-            "-filter:v", f"setpts=PTS/{speed_factor}", 
-            "-filter:a", f"atempo={speed_factor}", 
-            adjusted_segment
-        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        segments.append(adjusted_segment)
-
-    # Merge all segments
-    with open("file_list.txt", "w") as f:
-        for segment in segments:
-            f.write(f"file '{segment}'\n")
-    subprocess.run([
-        "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", "file_list.txt", "-c", "copy", output_video
-    ],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-    # Cleanup temporary files
-    for segment in segments + [f"segment_{i}.mp4" for i in range(len(adjustments))]:
-        os.remove(segment)
-    os.remove("file_list.txt")
-
-# @app.route('/process-data', methods=['POST'])
-# def process_data():
-#     data = request.json
-#     timestamps_scenes = data['timestamps_scenes']
-#     form_data = data['form_data']
-#     transitions_data = data['transitions_data']
-#     song_len = data['song_len']
-#     motion_mode = data['motion_mode']
-#     seed = data['seed']
-#     song_name = data['song_name']
-
-#     # Here you can integrate your Python logic with the received data
-#     # Example: processed_data = your_function(timestamps_scenes, form_data, transitions_data)
-
-#     # print("FORM: ")
-#     # print(form_data)
-#     # print("TRANS: ")
-#     # print(transitions_data)
-
-#     song_duration, scene_change_times, transition_times, time_intervals, interval_strings, motion_data, og_motion_data = parse_input_data(form_data, transitions_data, song_len)
-#     final_anim_frames = []
-#     final_anim_frames.append(0)
-#     if round(song_len,2) not in scene_change_times:
-#         scene_change_times.append(round(song_len,2))
-#     # Calculate frames and generate prompts
-#     frame_data, animation_prompts, adjustments = calculate_frames(scene_change_times, interval_strings, motion_data, song_duration, final_anim_frames)
-#     # og_frame_data, _, _ = calculate_frames(scene_change_times, interval_strings, og_motion_data, song_duration, final_anim_frames)
-#     # print("OG FRAME DATA", og_frame_data, frame_data)
-#     motion_strings = build_transition_strings(frame_data)
-    
-
-#     # print("FRAME")
-#     # print(frame_data)
-#     # print("ANIM")
-#     # print(animation_prompts)
-#     # Print the final list of frame transitions for each motion type
-#     # print("\nFinal List of Frame Transitions for Each Motion Type:")
-#     # for motion, transitions in motion_strings.items():
-#     #     print(f"{motion}: {', '.join(transitions)}")
-
-#     final_scene_times = scene_change_times
-#     final_scene_times.insert(0, 0)
-#     final_scene_times.append(round(song_duration,2))
-#     final_scene_times = set(final_scene_times)
-#     final_scene_times = list(final_scene_times)
-#     # print(final_anim_frames)
-#     # print(final_scene_times)
-#     # Print the animation prompts
-#     # print("\nAnimation Prompts:")
-#     animation_prompts = ""
-
-#     # print("BAnANANANA", final_scene_times, final_anim_frames)
-#     if final_anim_frames[-1] + 1 == final_anim_frames[-2]:
-#         final_anim_frames=final_anim_frames[:-1]
-#     # print("BAnANANANA After", final_scene_times, final_anim_frames)
-
-    
-#     for i in range(len(final_anim_frames) - 1):
-#         animation_prompts += f"{final_anim_frames[i]}: | "
-#         # print(f"Start Time: {final_scene_times[i]}, End Time: {final_scene_times[i+1]}, Start Frame: {final_anim_frames[i]}, End Frame: {final_anim_frames[i+1]}")
-
-#     animation_prompts = animation_prompts[:-2]
-#     # print(animation_prompts)
-#     # For demonstration, we'll just return the received data
-#     prompts = generate_image_prompts(form_data, final_anim_frames)
-#     # print("PROMPTS")
-#     # print(prompts)
-#     # print("MOTIONS")
-#     # print(motion_strings)
-#     deforum_prompt = create_deforum_prompt(motion_strings, final_anim_frames, motion_mode, prompts,seed)
-#     print("----------------DEFORUM PROMPTS----------------")
-#     print(deforum_prompt)
-#     output = api.run(
-#         "deforum-art/deforum-stable-diffusion:1a98303504c7d866d2b198bae0b03237eab82edc1491a5306895d12b0021d6f6",
-#         input=deforum_prompt)
-#     # output = 'https://replicate.delivery/yhqm/PC328eeCcck7vk76cL6VMpfNC90mQ4tNmIhZXgNTaXUT1qmnA/out.mp4'
-
-#     print("OUTPUT", output)
-#     #ADDED TO EDIT VIDEO
-#     # final_video = process_video_with_speed_adjustments(output, adjustments, song_name)
-#     # print(f"Final video saved to: {final_video}")
-#     response = {
-#         'timestamps_scenes': timestamps_scenes,
-#         'form_data': form_data,
-#         'transitions_data': transitions_data,
-#         'song_len': song_len,
-#         'animation_prompts': animation_prompts,
-#         'motion_prompts': motion_strings,
-#         'prompts': prompts,
-#         'output': output
-#         # 'processed_data': processed_data
-#     }
-
-#     return jsonify(response)
-
-# @app.route('/check_job_status_generate/<job_id>', methods=['GET'])
-# def check_job_status_generate(job_id):
-#     job = queue.fetch_job(job_id)
-    
-#     if job is None:
-#         return jsonify({'status': 'failed', 'error': 'Job not found'}), 404
-#     print("Status Generate: ", job.get_status())
-#     if job.is_finished:
-#         result = job.result
-#         print("Job result: ", result)
-#         if result and isinstance(result, dict):
-#             # Check for error or output
-#             if 'output' in result:
-#                 return jsonify({'status': 'finished', 'output': result['output']})
-#             elif 'error' in result:
-#                 return jsonify({'status': 'failed', 'error': result['error']}), 500
-#         return jsonify({'status': 'failed', 'error': 'Unexpected output format'}), 500
-    
-#     if job.is_failed:
-#         return jsonify({'status': 'failed', 'error': 'Job failed'}), 500
-    
-#     # Job is still processing
-#     return jsonify({'status': 'processing'}), 200
-
 
 @app.route("/check-job-status/<job_id>", methods=["GET"])
 def check_job_status(job_id):
@@ -1375,11 +1097,304 @@ def check_job_status(job_id):
         return jsonify({"job_id": job_id, "status": status}), 200
 
 
+    # def combine_audio_video(audio_filename, video_url, output_filename="./downloaded_videos/output_combined.mp4"):
+    #     try:
+    #         audio_path = f"./{audio_filename}"  # Adjust path based on where you save files
+    #         audio_clip = AudioFileClip(audio_path)
+    #         video_clip = VideoFileClip(video_url)
+
+    #         # Combine audio and video
+    #         final_clip = video_clip.set_audio(audio_clip)
+
+    #         # Save the final output
+    #         final_clip.write_videofile(output_filename, codec="libx264", audio_codec="aac")
+    #         print(f"Combined video saved to {output_filename}")
+            
+
+    #     except Exception as e:
+    #         print(f"Error during processing: {e}")
+    #     finally:
+    #         # Properly close MoviePy resources
+    #         if 'audio_clip' in locals():
+    #             audio_clip.close()
+    #         if 'video_clip' in locals():
+    #             video_clip.close()
+    #         if 'final_clip' in locals():
+    #             final_clip.close()
+
+    # @app.route('/get_video/<filename>', methods=["GET"])
+    # def get_video(filename):
+    #     print("Downloading video?")
+        
+    #     # Get the video_url from the query parameters
+    #     video_url = request.args.get('video_url')  # This retrieves the 'video_url' parameter
+    #     if not video_url:
+    #         return jsonify({"error": "video_url parameter is missing."}), 400
+
+    #     # Assuming the filename is valid, prepare the output filename
+    #     output_filename = "./downloaded_videos/output_combined.mp4"
+        
+    #     # Call the function to combine audio and video
+    #     try:
+    #         combine_audio_video(filename, video_url, output_filename)
+    #     except Exception as e:
+    #         return jsonify({"error": str(e)}), 500
+        
+    #     # Return the combined video file
+    #     return send_file(output_filename, as_attachment=True, download_name="output_combined.mp4")
+
+    # def combine_audio_video(audio_filename, video_url, output_filename="./downloaded_videos/output_combined.mp4"):
+    #     try:
+    #         # Assuming you are downloading the video from the URL and combining it with the audio file
+    #         # Download the video file from `video_url`
+    #         # Then use MoviePy or any other method to combine video and audio
+
+    #         audio_path = f"./{audio_filename}"  # Adjust path based on where you save audio files
+    #         video_clip = VideoFileClip(video_url)  # Assuming video_url is directly usable
+            
+    #         # Process video and audio combining (not full code for brevity)
+    #         # Example with MoviePy:
+    #         audio_clip = AudioFileClip(audio_path)
+    #         final_clip = video_clip.set_audio(audio_clip)
+
+    #         final_clip.write_videofile(output_filename, codec="libx264", audio_codec="aac")
+    #         print(f"Combined video saved to {output_filename}")
+
+    #     except Exception as e:
+    #         print(f"Error during processing: {e}")
+    #         raise e  # Re-raise error so it can be handled in the route
+    #     finally:
+    #         # Ensure all resources are properly closed
+    #         if 'audio_clip' in locals():
+    #             audio_clip.close()
+    #         if 'video_clip' in locals():
+    #             video_clip.close()
+    #         if 'final_clip' in locals():
+    #             final_clip.close()
+
+# @app.route('/get_video/<filename>', methods=["POST"])  # Change method to POST
+# def get_video(filename):
+#     print("Downloading video?")
+    
+#     # Get the video_url from the JSON body
+#     data = request.get_json()  # Parse JSON body
+#     video_url = data.get('video_url')  # Extract video_url from the JSON
+#     if not video_url:
+#         return jsonify({"error": "video_url parameter is missing."}), 400
+
+#     # Prepare the output filename
+#     output_filename = "./downloaded_videos/output_combined.mp4"
+    
+#     # Call the function to combine audio and video
+#     try:
+#         combine_audio_video(filename, video_url, output_filename)
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
+    
+#     # Return the combined video file as an attachment
+#     return send_file(output_filename, as_attachment=True, download_name="output_combined.mp4")
+
+
+# def combine_audio_video(audio_filename, video_url, output_filename="./downloaded_videos/output_combined.mp4"):
+#     try:
+#         # Process video and audio combining using MoviePy
+#         audio_path = f"./{audio_filename}"  # Adjust path based on where you save audio files
+#         video_clip = VideoFileClip(video_url)  # Assuming video_url is directly usable
+        
+#         # Combine audio and video
+#         audio_clip = AudioFileClip(audio_path)
+#         final_clip = video_clip.set_audio(audio_clip)
+
+#         final_clip.write_videofile(output_filename, codec="libx264", audio_codec="aac")
+#         print(f"Combined video saved to {output_filename}")
+
+#     except Exception as e:
+#         print(f"Error during processing: {e}")
+#         raise e  # Re-raise error so it can be handled in the route
+#     finally:
+#         # Ensure all resources are properly closed
+#         if 'audio_clip' in locals():
+#             audio_clip.close()
+#         if 'video_clip' in locals():
+#             video_clip.close()
+#         if 'final_clip' in locals():
+#             final_clip.close()
+
+@app.route('/get_video/<filename>', methods=["POST"])
+def get_video(filename):
+    print("Downloading video?")
+
+    # Get the video_url and adjustments from the JSON body
+    data = request.get_json()
+    video_url = data.get('video_url')
+    adjustments = data.get('adjustments')
+
+    if not video_url:
+        return jsonify({"error": "video_url parameter is missing."}), 400
+
+    if not adjustments:
+        return jsonify({"error": "adjustments parameter is missing."}), 400
+
+    # Prepare the output filename
+    output_filename = f"./downloaded_videos/{filename}_output_combined.mp4"
+
+    # Call the function to process the video with speed adjustments
+    try:
+        process_video_with_speed_adjustments(video_url, adjustments, filename, output_filename)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    # Return the combined video file as an attachment
+    return send_file(output_filename, as_attachment=True, download_name=f"{filename}_output_combined.mp4")
+
+
+def process_video_with_speed_adjustments(video_url, adjustments, audio_filename, output_filename):
+    # Step 1: Download the video
+    video_file = "downloaded_video.mp4"
+    download_video(video_url, video_file)
+
+    # # Step 2: Adjust the playback speed of intervals
+    adjusted_video_file = "adjusted_video.mp4"
+    adjust_video_speed(video_file, adjustments, adjusted_video_file)
+
+    # Step 3: Combine the adjusted video with the audio
+    # combine_audio_video(audio_filename, video_file, output_filename)
+    combine_audio_video(audio_filename, adjusted_video_file, output_filename)
+
+    # Cleanup temporary files
+    if os.path.exists(video_file):
+        os.remove(video_file)
+    if os.path.exists(adjusted_video_file):
+        os.remove(adjusted_video_file)
+
+
+def download_video(api_url, save_path):
+    print("download")
+    response = requests.get(api_url, stream=True,verify=False)
+    if response.status_code == 200:
+        with open(save_path, "wb") as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+    else:
+        raise Exception(f"Failed to download video: {response.status_code}")
+
+
+def adjust_video_speed(input_video, adjustments, output_video):
+    print("adjusting video speed")
+    segments = []
+    for i, adj in enumerate(adjustments):
+        start_frame = adj["start_frame"]
+        end_frame = adj["end_frame"]
+        speed_factor = adj["speed_factor"]
+
+        # Calculate start and end times
+        start_time = start_frame / 15  # Assuming 15 fps
+        end_time = end_frame / 15
+
+        # Extract segment
+        segment_file = f"segment_{i}.mp4"
+        subprocess.run([
+            "ffmpeg", "-i", input_video,
+            "-vf", f"select='between(n,{start_frame},{end_frame})'",
+            "-vsync", "vfr",
+            "-c:v", "libx264",
+            segment_file
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        # Adjust playback speed
+        adjusted_segment = f"adjusted_segment_{i}.mp4"
+        subprocess.run([
+            "ffmpeg", "-i", segment_file,
+            "-filter:v", f"setpts=PTS/{speed_factor}",
+            "-filter:a", f"atempo={min(speed_factor, 2.0)}",  # atempo must be between 0.5 and 2.0, limit accordingly
+            adjusted_segment
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        segments.append(adjusted_segment)
+
+    # Merge all segments
+    with open("file_list.txt", "w") as f:
+        for segment in segments:
+            f.write(f"file '{segment}'\n")
+    subprocess.run([
+        "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", "file_list.txt", "-c", "copy", output_video
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    # Cleanup temporary files
+    for segment in segments + [f"segment_{i}.mp4" for i in range(len(adjustments))]:
+        os.remove(segment)
+    os.remove("file_list.txt")
+
+    temp_files = [f"segment_{i}.mp4" for i in range(100)] + \
+             [f"adjusted_segment_{i}.mp4" for i in range(100)] + ["file_list.txt"]
+
+    for temp_file in temp_files:
+        if os.path.exists(temp_file):
+            os.remove(temp_file)
+
+# def adjust_video_speed(input_video, adjustments, output_video):
+#     print("adjusting video speed")
+
+#     # Build filter graph
+#     filter_graph = ""
+#     for i, adj in enumerate(adjustments):
+#         start_time = adj["start_frame"] / 15  # Assuming 15 fps
+#         end_time = adj["end_frame"] / 15
+#         speed_factor = adj["speed_factor"]
+
+#         # Trim, setpts for video, and atempo for audio
+#         filter_graph += (
+#             f"[0:v]trim=start={start_time}:end={end_time},setpts=PTS/{speed_factor}[v{i}];"
+#             f"[0:a]atrim=start={start_time}:end={end_time},asetpts=PTS-STARTPTS,atempo={min(speed_factor, 2.0)}[a{i}];"
+#         )
+
+#     # Concatenate all segments
+#     video_inputs = "".join(f"[v{i}]" for i in range(len(adjustments)))
+#     audio_inputs = "".join(f"[a{i}]" for i in range(len(adjustments)))
+#     filter_graph += f"{video_inputs}concat=n={len(adjustments)}:v=1:a=0[v];"
+#     filter_graph += f"{audio_inputs}concat=n={len(adjustments)}:v=0:a=1[a]"
+
+#     # Run FFmpeg
+#     subprocess.run([
+#         "ffmpeg", "-i", input_video, "-filter_complex", filter_graph,
+#         "-map", "[v]", "-map", "[a]", "-c:v", "libx264", "-c:a", "aac", output_video
+#     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+#     print(f"Output saved to {output_video}")
+
+
+
+def combine_audio_video(audio_filename, video_file, output_filename):
+    try:
+        audio_path = f"./{audio_filename}"
+        video_clip = VideoFileClip(video_file)
+        audio_clip = AudioFileClip(audio_path)
+
+        final_clip = video_clip.set_audio(audio_clip)
+        final_clip.write_videofile(output_filename, codec="libx264", audio_codec="aac")
+        print(f"Combined video saved to {output_filename}")
+
+    except Exception as e:
+        print(f"Error during processing: {e}")
+        raise e
+    finally:
+        # Ensure all resources are properly closed
+        if 'audio_clip' in locals():
+            audio_clip.close()
+        if 'video_clip' in locals():
+            video_clip.close()
+        if 'final_clip' in locals():
+            final_clip.close()
+
 
 @app.route("/process-data", methods=["POST"])
 def process_data():
     # Enqueue the task and pass the request data
+    # files = os.listdir('.')
+    # print("Files in current directory:", files)
     data = request.json
+
+    
+    # files['audioFile']
     print("PROCESS DATA")
     api_key = api_key_storage
     # print("API TOKEN? api key, ", api_key,". os:", os.getenv("LAB_DISCO_API_KEY"))

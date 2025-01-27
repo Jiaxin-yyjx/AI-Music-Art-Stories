@@ -5,13 +5,14 @@ import cloudinary.uploader
 import json
 from queue_config import queue, redis_conn
 import os
-from flask import jsonify
+from flask import jsonify, send_file, Flask
 from rq import get_current_job
 from rq.timeouts import JobTimeoutException
 import replicate
 import librosa
 import numpy as np
 from time import sleep
+import requests
 from helpers import (  # Adjust the import paths as needed
     parse_input_data,
     calculate_frames,
@@ -247,22 +248,24 @@ def generate_image_task(data):
         return {"status": "error", 'error': str(e)}  # Return error data
 
 
+def download_video_from_url(video_url, save_path="./downloaded_videos/replicate_video.mp4"):
+    response = requests.get(video_url, stream=True)
+    if response.status_code == 200:
+        with open(save_path, 'wb') as file:
+            for chunk in response.iter_content(chunk_size=8192):
+                file.write(chunk)
+        print(f"Video downloaded successfully to {save_path}")
+    else:
+        raise Exception(f"Failed to download video. Status code: {response.status_code}")
+    return save_path
+
+
+
 def long_running_task(data):
     global init_image
     try:
         job = get_current_job()
-        # enqueue_time = data.get('enqueue_time', None)
-        # if enqueue_time:
-        #     enqueue_time = datetime.utcfromtimestamp(enqueue_time)
-        #     now = datetime.utcnow()
-        #     delay = (now - enqueue_time).total_seconds()
-
-        #     print(f"Job started after {delay} seconds.")
-        #     if delay > 9:  # Example: timeout threshold
-        #         print("Job started because it timed out.")
-        #         return {"status": "error", "code": 502, "output": ""}
-        # Extract the data from the input
-        # api_key = os.getenv("REPLICATE_API_KEY")  # Store your API key in environment variables
+        
         print("Long running running")
         api_key = data['api_key']
         print(f"USED API KEY: {api_key}")
@@ -283,7 +286,7 @@ def long_running_task(data):
         if round(song_len, 2) not in scene_change_times:
             scene_change_times.append(round(song_len, 2))
         
-        frame_data, animation_prompts = calculate_frames(scene_change_times, interval_strings, motion_data, song_duration, final_anim_frames)
+        frame_data, animation_prompts, adjustments = calculate_frames(scene_change_times, interval_strings, motion_data, song_duration, final_anim_frames)
         motion_strings = build_transition_strings(frame_data)
         prompts = generate_image_prompts(form_data, final_anim_frames)
 
@@ -295,86 +298,23 @@ def long_running_task(data):
         print("INIT IMAGE THAT IS PASSED IN: ", input_image_url)
         deforum_prompt = create_deforum_prompt(motion_strings, final_anim_frames, motion_mode, prompts, seed, input_image_url)
         print("deforum prompt: ", deforum_prompt)
-        # deforum_prompt = {
-        #     "fov": 40,
-        #     "fps": 15,
-        #     "seed": 868591112,
-        #     "zoom": "0:(0.7), 27:(0.7), 28:(0)",
-        #     "angle": "0:(0)",
-        #     "width": 512,
-        #     "border": "replicate",
-        #     "height": 512,
-        #     "sampler": "euler_ancestral",
-        #     "use_init": True,
-        #     "use_mask": False,
-        #     "clip_name": "ViT-L/14",
-        #     "far_plane": 10000,
-        #     "init_image": "https://raw.githubusercontent.com/ct3008/ct3008.github.io/main/images/isee1.jpeg",
-        #     "max_frames": 50,
-        #     "near_plane": 200,
-        #     "invert_mask": False,
-        #     "midas_weight": 0.3,
-        #     "padding_mode": "border",
-        #     "rotation_3d_x": "0:(0)",
-        #     "rotation_3d_y": "0:(0)",
-        #     "rotation_3d_z": "0:(0)",
-        #     "sampling_mode": "bicubic",
-        #     "translation_x": "0:(10*sin(2*3.14*t/10))",
-        #     "translation_y": "0:(0)",
-        #     "translation_z": "0:(10)",
-        #     "animation_mode": "2D",
-        #     "guidance_scale": 7,
-        #     "noise_schedule": "0: (0.02)",
-        #     "sigma_schedule": "0: (1.0)",
-        #     "use_mask_video": False,
-        #     "amount_schedule": "0: (0.2)",
-        #     "color_coherence": "Match Frame 0 LAB",
-        #     "kernel_schedule": "0: (5)",
-        #     "model_checkpoint": "Protogen_V2.2.ckpt",
-        #     "animation_prompts": "0: a beautiful apple, trending on Artstation",
-        #     "contrast_schedule": "0: (1.0)",
-        #     "diffusion_cadence": "1",
-        #     "extract_nth_frame": 1,
-        #     "resume_timestring": "20220829210106",
-        #     "strength_schedule": "0: (0.65)",
-        #     "use_depth_warping": True,
-        #     "threshold_schedule": "0: (0.0)",
-        #     "flip_2d_perspective": False,
-        #     "hybrid_video_motion": "None",
-        #     "num_inference_steps": 50,
-        #     "perspective_flip_fv": "0:(53)",
-        #     "interpolate_x_frames": 4,
-        #     "perspective_flip_phi": "0:(t%15)",
-        #     "hybrid_video_composite": False,
-        #     "interpolate_key_frames": False,
-        #     "perspective_flip_gamma": "0:(0)",
-        #     "perspective_flip_theta": "0:(0)",
-        #     "resume_from_timestring": False,
-        #     "hybrid_video_flow_method": "Farneback",
-        #     "overwrite_extracted_frames": True,
-        #     "hybrid_video_comp_mask_type": "None",
-        #     "hybrid_video_comp_mask_inverse": False,
-        #     "hybrid_video_comp_mask_equalize": "None",
-        #     "hybrid_video_comp_alpha_schedule": "0:(1)",
-        #     "hybrid_video_generate_inputframes": False,
-        #     "hybrid_video_comp_save_extra_frames": False,
-        #     "hybrid_video_use_video_as_mse_image": False,
-        #     "color_coherence_video_every_N_frames": 1,
-        #     "hybrid_video_comp_mask_auto_contrast": False,
-        #     "hybrid_video_comp_mask_contrast_schedule": "0:(1)",
-        #     "hybrid_video_use_first_frame_as_init_image": True,
-        #     "hybrid_video_comp_mask_blend_alpha_schedule": "0:(0.5)",
-        #     "hybrid_video_comp_mask_auto_contrast_cutoff_low_schedule": "0:(0)",
-        #     "hybrid_video_comp_mask_auto_contrast_cutoff_high_schedule": "0:(100)"
-        #     }
+        
         # Run the API
         output = api.run(
             "deforum-art/deforum-stable-diffusion:1a98303504c7d866d2b198bae0b03237eab82edc1491a5306895d12b0021d6f6",
             input=deforum_prompt
         )
-
+        # output = "https://replicate.delivery/yhqm/fw9VUo7kexv1fowRmtpZyEwCa8HNUef4uWpDsoQuNbW8EHHhC/out.mp4"
+        # video_path = download_video_from_url(output)
+        filename = data['filename']
+        if not filename or not output:
+            return jsonify({"error": "Missing audio filename or video URL"}), 400
         
-        # output = "https://replicate.delivery/yhqm/u7FcIvDd32bjK5ccA5v0FmQ8LesqmftC6MrUbrRMTZECkyPTA/out.mp4"
+        # output_filename = "./downloaded_videos/output_combined.mp4"
+        # combine_audio_video(filename, output, output_filename)
+        
+        
+        
         print("output: ", output)
         # time.sleep(12)
         # Compile the response
@@ -399,7 +339,9 @@ def long_running_task(data):
             'prompts': prompts,
             'output_url': final_output,
             'original_output': str_output,
-            'input_image_url': input_image_url
+            'input_image_url': input_image_url,
+            'filename': filename,
+            'adjustments': adjustments
         }
         
         print("response: ", response)
@@ -447,7 +389,7 @@ def download_prompt(data):
     if round(song_len, 2) not in scene_change_times:
         scene_change_times.append(round(song_len, 2))
     
-    frame_data, animation_prompts = calculate_frames(scene_change_times, interval_strings, motion_data, song_duration, final_anim_frames)
+    frame_data, animation_prompts,_ = calculate_frames(scene_change_times, interval_strings, motion_data, song_duration, final_anim_frames)
     motion_strings = build_transition_strings(frame_data)
     prompts = generate_image_prompts(form_data, final_anim_frames)
 
