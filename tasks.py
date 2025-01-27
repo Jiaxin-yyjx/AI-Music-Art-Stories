@@ -300,11 +300,11 @@ def long_running_task(data):
         print("deforum prompt: ", deforum_prompt)
         
         # Run the API
-        output = api.run(
-            "deforum-art/deforum-stable-diffusion:1a98303504c7d866d2b198bae0b03237eab82edc1491a5306895d12b0021d6f6",
-            input=deforum_prompt
-        )
-        # output = "https://replicate.delivery/yhqm/fw9VUo7kexv1fowRmtpZyEwCa8HNUef4uWpDsoQuNbW8EHHhC/out.mp4"
+        # output = api.run(
+        #     "deforum-art/deforum-stable-diffusion:1a98303504c7d866d2b198bae0b03237eab82edc1491a5306895d12b0021d6f6",
+        #     input=deforum_prompt
+        # )
+        output = "https://replicate.delivery/yhqm/fw9VUo7kexv1fowRmtpZyEwCa8HNUef4uWpDsoQuNbW8EHHhC/out.mp4"
         # video_path = download_video_from_url(output)
         filename = data['filename']
         if not filename or not output:
