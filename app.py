@@ -1225,7 +1225,7 @@ def check_job_status(job_id):
 
 @app.route('/get_video/<filename>', methods=["POST"])
 def get_video(filename):
-    print("Downloading video?")
+    print("Downloading video...")
 
     # Get the video_url and adjustments from the JSON body
     data = request.get_json()
@@ -1238,10 +1238,9 @@ def get_video(filename):
     if not adjustments:
         return jsonify({"error": "adjustments parameter is missing."}), 400
 
-    # Prepare the output filename
-    output_filename = f"./{filename}_output_combined.mp4"
+    # Prepare the output filename in Heroku's temporary directory
+    output_filename = f"/tmp/{filename}_output_combined.mp4"
 
-    # Call the function to process the video with speed adjustments
     try:
         process_video_with_speed_adjustments(video_url, adjustments, filename, output_filename)
     except Exception as e:
@@ -1252,16 +1251,23 @@ def get_video(filename):
 
 
 def process_video_with_speed_adjustments(video_url, adjustments, audio_filename, output_filename):
+    # Check if /tmp directory exists, if not, create it
+    tmp_directory = "/tmp"
+    if not os.path.exists(tmp_directory):
+        print(f"{tmp_directory} does not exist. Creating it...")
+        os.makedirs(tmp_directory)
+    else:
+        print(f"{tmp_directory} exists.")
+
     # Step 1: Download the video
-    video_file = "downloaded_video.mp4"
+    video_file = os.path.join(tmp_directory, "downloaded_video.mp4")
     download_video(video_url, video_file)
 
-    # # Step 2: Adjust the playback speed of intervals
-    adjusted_video_file = "adjusted_video.mp4"
+    # Step 2: Adjust the playback speed of intervals
+    adjusted_video_file = os.path.join(tmp_directory, "adjusted_video.mp4")
     adjust_video_speed(video_file, adjustments, adjusted_video_file)
 
     # Step 3: Combine the adjusted video with the audio
-    # combine_audio_video(audio_filename, video_file, output_filename)
     combine_audio_video(audio_filename, adjusted_video_file, output_filename)
 
     # Cleanup temporary files
@@ -1276,17 +1282,15 @@ def download_video(api_url, save_path):
     response = requests.get(api_url, stream=True, verify=False)
     print(f"Response code: {response.status_code}")
     if response.status_code == 200:
-        # print("Downloading video started.")
         with open(save_path, "wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
+            for chunk in response.iter_content(chunk_size=4096):
                 f.write(chunk)
-        # files = os.listdir('.')
-        # print(f"Files in current directory: {files}")
     else:
         raise Exception(f"Failed to download video: {response.status_code}")
 
+
 def adjust_video_speed(input_video, adjustments, output_video):
-    print("adjusting video speed")
+    print("Adjusting video speed")
     segments = []
     for i, adj in enumerate(adjustments):
         start_frame = adj["start_frame"]
@@ -1298,7 +1302,7 @@ def adjust_video_speed(input_video, adjustments, output_video):
         end_time = end_frame / 15
 
         # Extract segment
-        segment_file = f"segment_{i}.mp4"
+        segment_file = os.path.join("/tmp", f"segment_{i}.mp4")
         subprocess.run([
             "ffmpeg", "-i", input_video,
             "-vf", f"select='between(n,{start_frame},{end_frame})'",
@@ -1308,7 +1312,7 @@ def adjust_video_speed(input_video, adjustments, output_video):
         ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
         # Adjust playback speed
-        adjusted_segment = f"adjusted_segment_{i}.mp4"
+        adjusted_segment = os.path.join("/tmp", f"adjusted_segment_{i}.mp4")
         subprocess.run([
             "ffmpeg", "-i", segment_file,
             "-filter:v", f"setpts=PTS/{speed_factor}",
@@ -1318,66 +1322,26 @@ def adjust_video_speed(input_video, adjustments, output_video):
         segments.append(adjusted_segment)
 
     # Merge all segments
-    with open("file_list.txt", "w") as f:
+    file_list_path = os.path.join("/tmp", "file_list.txt")
+    with open(file_list_path, "w") as f:
         for segment in segments:
             f.write(f"file '{segment}'\n")
     subprocess.run([
-        "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", "file_list.txt", "-c", "copy", output_video
+        "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", file_list_path, "-c", "copy", output_video
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     # Cleanup temporary files
-    for segment in segments + [f"segment_{i}.mp4" for i in range(len(adjustments))]:
-        os.remove(segment)
-    os.remove("file_list.txt")
-
-    temp_files = [f"segment_{i}.mp4" for i in range(100)] + \
-             [f"adjusted_segment_{i}.mp4" for i in range(100)] + ["file_list.txt"]
-
-    for temp_file in temp_files:
-        if os.path.exists(temp_file):
-            os.remove(temp_file)
-
-# def adjust_video_speed(input_video, adjustments, output_video):
-#     print("adjusting video speed")
-
-#     # Build filter graph
-#     filter_graph = ""
-#     for i, adj in enumerate(adjustments):
-#         start_time = adj["start_frame"] / 15  # Assuming 15 fps
-#         end_time = adj["end_frame"] / 15
-#         speed_factor = adj["speed_factor"]
-
-#         # Trim, setpts for video, and atempo for audio
-#         filter_graph += (
-#             f"[0:v]trim=start={start_time}:end={end_time},setpts=PTS/{speed_factor}[v{i}];"
-#             f"[0:a]atrim=start={start_time}:end={end_time},asetpts=PTS-STARTPTS,atempo={min(speed_factor, 2.0)}[a{i}];"
-#         )
-
-#     # Concatenate all segments
-#     video_inputs = "".join(f"[v{i}]" for i in range(len(adjustments)))
-#     audio_inputs = "".join(f"[a{i}]" for i in range(len(adjustments)))
-#     filter_graph += f"{video_inputs}concat=n={len(adjustments)}:v=1:a=0[v];"
-#     filter_graph += f"{audio_inputs}concat=n={len(adjustments)}:v=0:a=1[a]"
-
-#     # Run FFmpeg
-#     subprocess.run([
-#         "ffmpeg", "-i", input_video, "-filter_complex", filter_graph,
-#         "-map", "[v]", "-map", "[a]", "-c:v", "libx264", "-c:a", "aac", output_video
-#     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-#     print(f"Output saved to {output_video}")
-
-
+    for segment in segments + [os.path.join("/tmp", f"segment_{i}.mp4") for i in range(len(adjustments))]:
+        if os.path.exists(segment):
+            os.remove(segment)
+    if os.path.exists(file_list_path):
+        os.remove(file_list_path)
 
 def combine_audio_video(audio_filename, video_file, output_filename):
     try:
-        audio_path = f"./{audio_filename}"
+        audio_path = audio_filename
         video_clip = VideoFileClip(video_file)
         audio_clip = AudioFileClip(audio_path)
-        # print("COMBINE AUDIO VIDEO")
-        print(audio_path)
-        print(video_clip)
-        print(audio_clip)
 
         final_clip = video_clip.set_audio(audio_clip)
         final_clip.write_videofile(output_filename, codec="libx264", audio_codec="aac")

@@ -514,6 +514,8 @@ def calculate_frames(scene_change_times, time_intervals, motion_data, total_song
         if str(end_time) == str(total_song_len) and end_frame not in final_anim_frames and (end_frame - 1) not in final_anim_frames:
             final_anim_frames.append(end_frame)
 
+        print("ADJUSTMENTS: ", adjustments)
+
     return frame_data, animation_prompts, adjustments
 
 
