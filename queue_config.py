@@ -30,4 +30,5 @@ redis_conn = get_redis_connection()
 
 # Create the RQ queue
 queue = Queue(connection=redis_conn)
+high_priority_queue = Queue("high_priority", connection=redis_conn)
 # print("QUEUE: ", queue)

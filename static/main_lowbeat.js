@@ -1843,6 +1843,7 @@ function checkJobStatus(jobId) {
                 
                 // Process the result when the job is done
                 handleJobResult(statusData);
+                downloadStitchedVideo(statusData);
             }
             else if (statusData.status === 'failed') {
                 // If the job has failed, stop polling and display an error
@@ -1863,9 +1864,46 @@ function checkJobStatus(jobId) {
     }, 3000);  // 3000 ms = 3 seconds
 }
 
-// Handle the job result
-function handleJobResult(statusData) {
-    // console.log("status data:", statusData);
+async function checkStitchVideoStatus(jobId) {
+    const statusUrl = `/check-job-status/${jobId}`;
+    const response = await fetch(statusUrl);
+    const data = await response.json();
+
+    if (data.status === "finished") {
+        // console.log('data: ', data.result)
+        console.log("Video processing complete! Downloading...");
+        const downloadUrl1 = `${data.result.split('/').pop()}`;
+
+        fetch(`/download/${downloadUrl1}`, {
+            method: 'POST',  // Change to POST
+            headers: {
+                'Content-Type': 'application/json'
+            } // Pass video_url in the request body
+        })
+            .then(response => response.blob())  // Get the video file as a blob
+            .then(blob => {
+                // Create a URL for the blob
+                const downloadUrl = URL.createObjectURL(blob);
+                
+                // Create a link element and trigger the download
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = `${data.result.split('/').pop()}`;  // Specify the downloaded file name
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            })
+            .catch(error => {
+                console.error('Error downloading the video:', error);
+            });
+    } else if (data.status === "failed") {
+        alert("Video processing failed.");
+    } else {
+        setTimeout(() => checkStitchVideoStatus(jobId), 2000); // Poll every 2 seconds
+    }
+}
+
+function downloadStitchedVideo(statusData){
     const filename = statusData.result.output.filename;  // The video filename provided in the response
     // console.log('filename: ', filename)
     // Create the request URL
@@ -1879,30 +1917,77 @@ function handleJobResult(statusData) {
         'video_url': statusData.result.output.output_url,
         'adjustments': adjustments
     };
-    // console.log("HANDLE JOB data: " + data);
+
     fetch(`/get_video/${filename}`, {
-        method: 'POST',  // Change to POST
+        method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(data)  // Pass video_url in the request body
+        body: JSON.stringify(data)
     })
-        .then(response => response.blob())  // Get the video file as a blob
-        .then(blob => {
-            // Create a URL for the blob
-            const downloadUrl = URL.createObjectURL(blob);
+        .then(response => response.json())
+        .then(data => {
+            console.log('Job queued:', data);
+        
+            // Store the job ID
+            const jobId = data.job_id;
+
+            // Call the function to check the job status
+            checkStitchVideoStatus(jobId);
+            // console.log("done checking job status");
             
-            // Create a link element and trigger the download
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = `${filename}_output_combined.mp4`;  // Specify the downloaded file name
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
         })
         .catch(error => {
-            console.error('Error downloading the video:', error);
+            console.error('Error:', error);
+        })
+        .finally(() => {
+            // Hide loading indicator after completion
+            // loadingIndicator.style.display = "none";
         });
+
+    
+}
+
+// Handle the job result
+function handleJobResult(statusData) {
+    // console.log("status data:", statusData);
+    // const filename = statusData.result.output.filename;  // The video filename provided in the response
+    // // console.log('filename: ', filename)
+    // // Create the request URL
+    // const videoUrl = statusData.result.output.output_url
+    // // console.log('video url: ', videoUrl)
+    // const adjustments = statusData.result.output.adjustments
+    
+
+    // const data = {
+    //     'filename': filename,
+    //     'video_url': statusData.result.output.output_url,
+    //     'adjustments': adjustments
+    // };
+    // // console.log("HANDLE JOB data: " + data);
+    // fetch(`/get_video/${filename}`, {
+    //     method: 'POST',  // Change to POST
+    //     headers: {
+    //         'Content-Type': 'application/json'
+    //     },
+    //     body: JSON.stringify(data)  // Pass video_url in the request body
+    // })
+    //     .then(response => response.blob())  // Get the video file as a blob
+    //     .then(blob => {
+    //         // Create a URL for the blob
+    //         const downloadUrl = URL.createObjectURL(blob);
+            
+    //         // Create a link element and trigger the download
+    //         const link = document.createElement('a');
+    //         link.href = downloadUrl;
+    //         link.download = `${filename}_output_combined.mp4`;  // Specify the downloaded file name
+    //         document.body.appendChild(link);
+    //         link.click();
+    //         document.body.removeChild(link);
+    //     })
+    //     .catch(error => {
+    //         console.error('Error downloading the video:', error);
+    //     });
 
     // console.log("status data: ", statusData);
     if (statusData.result.error) {

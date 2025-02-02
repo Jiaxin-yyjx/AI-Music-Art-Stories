@@ -634,7 +634,7 @@ def create_prompt(data):
     color = data.get('color', '')
 
     prompt = (
-        f"{color}, {style} in {texture} texture, simple abstract, beautiful, 4k, motion. "
+        f"{color}, {style} in {texture} texture, simple, beautiful, 4k, motion. "
         f"{imagery}. Evoking a feeling of a {vibe} undertone."
     )
     return prompt

@@ -3,6 +3,7 @@ import redis
 from rq import Worker, Queue, Connection
 from urllib.parse import urlparse
 import ssl
+import time
 
 # Ensure you're using the Heroku Redis URL from the environment variables
 # redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
@@ -51,27 +52,18 @@ redis_conn = get_redis_connection()
 # redis_conn.ssl_context.verify_mode = ssl.CERT_NONE  # Disable verification
 
 # Listen to the default queue
-if __name__ == "__main__":
-    with Connection(redis_conn):
-        worker = Worker(["default"])
-        worker.work()
-
-
-# import os
-# import redis
-# from rq import Worker, Queue, Connection
-
-# # Ensure you're using the Heroku Redis URL from the environment variables
-# redis_url = os.getenv("REDIS_URL","redis://localhost:6379/0")
-
-# if not redis_url:
-#     raise ValueError("REDIS_URL environment variable is not set!")
-
-# # Connect to Redis
-# redis_conn = redis.from_url(redis_url)
-
-# # Listen to the default queue
 # if __name__ == "__main__":
 #     with Connection(redis_conn):
-#         worker = Worker(["default"])
+#         worker = Worker(["high_priority","default"])
 #         worker.work()
+
+class DelayedWorker(Worker):
+    def execute_job(self, job, queue):
+        super().execute_job(job, queue)
+        # Add a delay before the worker fetches the next job
+        time.sleep(4)  # Adjust the delay as needed
+
+if __name__ == "__main__":
+    with Connection(redis_conn):
+        worker = DelayedWorker(["high_priority", "default"])  # Handle both queues
+        worker.work()

@@ -13,6 +13,12 @@ import librosa
 import numpy as np
 from time import sleep
 import requests
+import subprocess
+from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips
+from moviepy.video.fx import all as vfx
+from moviepy.video.fx.all import speedx
+import multiprocessing
+multiprocessing.set_start_method("spawn", force=True)
 from helpers import (  # Adjust the import paths as needed
     parse_input_data,
     calculate_frames,
@@ -210,12 +216,11 @@ def generate_image_task(data):
                 "num_inference_steps": 4
             }
         )
+        # output = ["https://cdn.pixabay.com/photo/2018/04/20/17/18/cat-3336579_640.jpg"]
         # Simulate a long-running process, like calling an API
-        # output = ["https://replicate.delivery/xezq/e7L0heZDcQkglUAxvUGnkXPE5n0ar6eRPlOrdj57th9pFQrnA/out-0.webp"]
-        # output = ["https://png.pngtree.com/png-clipart/20230512/original/pngtree-isolated-front-view-cat-on-white-background-png-image_9158426.png"]
         print("output done: ", output)
         # Simulating a timeout with sleep
-        time.sleep(3)  # Adjust this based on your expected task duration
+        time.sleep(10)  # Adjust this based on your expected task duration
 
         if output and isinstance(output, list):
             image_url = str(output[0])
@@ -316,7 +321,7 @@ def long_running_task(data):
         
         
         print("output: ", output)
-        # time.sleep(12)
+        time.sleep(15)
         # Compile the response
         if isinstance(output, str):  # It's a URL
             final_output = output
@@ -402,3 +407,132 @@ def download_prompt(data):
     deforum_prompt = create_deforum_prompt(motion_strings, final_anim_frames, motion_mode, prompts, seed, input_image_url)
     print("deforum prompt: ", deforum_prompt)
     return deforum_prompt
+
+def process_video_with_speed_adjustments(video_url, adjustments, audio_filename, output_filename):
+    # Check if /tmp directory exists, if not, create it
+    tmp_directory = "/tmp"
+    if not os.path.exists(tmp_directory):
+        print(f"{tmp_directory} does not exist. Creating it...")
+        os.makedirs(tmp_directory)
+    else:
+        print(f"{tmp_directory} exists.")
+
+    # Step 1: Download the video
+    video_file = os.path.join(tmp_directory, f"{audio_filename}_downloaded_video.mp4")
+    # download_video(video_url, video_file)
+
+    # Step 2: Adjust the playback speed of intervals
+    adjusted_video_file = os.path.join(tmp_directory, f"{audio_filename}_adjusted_video.mp4")
+    adjust_video_speed(video_file, adjustments, adjusted_video_file)
+
+    # Step 3: Combine the adjusted video with the audio
+    combine_audio_video(audio_filename, adjusted_video_file, output_filename)
+
+    # Cleanup temporary files
+    if os.path.exists(video_file):
+        os.remove(video_file)
+    if os.path.exists(adjusted_video_file):
+        os.remove(adjusted_video_file)
+    return output_filename
+
+
+
+def adjust_video_speed(input_video, adjustments, output_video):
+    print("Adjusting video speed")
+    clips = []
+
+    try:
+        with VideoFileClip(input_video) as video:  # Use context manager
+            for adj in adjustments:
+                start_time = adj["start_frame"] / 15  # Assuming 15 fps
+                end_time = adj["end_frame"] / 15
+                speed_factor = adj["speed_factor"]
+
+                # Extract and speed up the clip
+                subclip = video.subclip(start_time, end_time)
+                adjusted_clip = speedx(subclip, factor=speed_factor)
+                clips.append(adjusted_clip)
+
+            # Concatenate adjusted clips
+            final_video = concatenate_videoclips(clips)
+            final_video.write_videofile(output_video, codec="libx264", audio_codec="aac")
+
+    finally:
+        for clip in clips:  # Ensure all clip resources are closed
+            clip.close()
+def combine_audio_video(audio_filename, video_file, output_filename):
+    try:
+        with VideoFileClip(video_file) as video_clip, AudioFileClip(audio_filename) as audio_clip:
+            audio_path = audio_filename
+            # video_clip = VideoFileClip(video_file)
+            # audio_clip = AudioFileClip(audio_path)
+
+            final_clip = video_clip.set_audio(audio_clip)
+            final_clip.write_videofile(output_filename, codec="libx264", audio_codec="aac")
+            print(f"Combined video saved to {output_filename}")
+
+    except Exception as e:
+        print(f"Error during processing: {e}")
+        raise e
+
+    # finally:
+    #     # Ensure all resources are properly closed
+    #     if 'audio_clip' in locals():
+    #         print("audio clip ")
+    #         audio_clip.close()
+    #     if 'video_clip' in locals():
+    #         print("video clip ")
+    #         video_clip.close()
+    #     if 'final_clip' in locals():
+    #         print("final clip ")
+    #         final_clip.close()
+
+
+
+# def adjust_video_speed(input_video, adjustments, output_video):
+#     print("Adjusting video speed")
+#     segments = []
+#     for i, adj in enumerate(adjustments):
+#         start_frame = adj["start_frame"]
+#         end_frame = adj["end_frame"]
+#         speed_factor = adj["speed_factor"]
+
+#         # Calculate start and end times
+#         start_time = start_frame / 15  # Assuming 15 fps
+#         end_time = end_frame / 15
+
+#         # Extract segment
+#         segment_file = os.path.join("/tmp", f"segment_{i}.mp4")
+#         subprocess.run([
+#             "ffmpeg", "-i", input_video,
+#             "-vf", f"select='between(n,{start_frame},{end_frame})'",
+#             "-vsync", "vfr",
+#             "-c:v", "libx264",
+#             segment_file
+#         ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+#         # Adjust playback speed
+#         adjusted_segment = os.path.join("/tmp", f"adjusted_segment_{i}.mp4")
+#         subprocess.run([
+#             "ffmpeg", "-i", segment_file,
+#             "-filter:v", f"setpts=PTS/{speed_factor}",
+#             "-filter:a", f"atempo={min(speed_factor, 2.0)}",  # atempo must be between 0.5 and 2.0, limit accordingly
+#             adjusted_segment
+#         ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+#         segments.append(adjusted_segment)
+
+#     # Merge all segments
+#     file_list_path = os.path.join("/tmp", "file_list.txt")
+#     with open(file_list_path, "w") as f:
+#         for segment in segments:
+#             f.write(f"file '{segment}'\n")
+#     subprocess.run([
+#         "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", file_list_path, "-c", "copy", output_video
+#     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+#     # Cleanup temporary files
+#     for segment in segments + [os.path.join("/tmp", f"segment_{i}.mp4") for i in range(len(adjustments))]:
+#         if os.path.exists(segment):
+#             os.remove(segment)
+#     if os.path.exists(file_list_path):
+#         os.remove(file_list_path)
