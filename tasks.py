@@ -220,7 +220,7 @@ def generate_image_task(data):
         # Simulate a long-running process, like calling an API
         print("output done: ", output)
         # Simulating a timeout with sleep
-        time.sleep(10)  # Adjust this based on your expected task duration
+        # time.sleep(10)  # Adjust this based on your expected task duration
 
         if output and isinstance(output, list):
             image_url = str(output[0])
@@ -321,7 +321,7 @@ def long_running_task(data):
         
         
         print("output: ", output)
-        time.sleep(15)
+        # time.sleep(15)
         # Compile the response
         if isinstance(output, str):  # It's a URL
             final_output = output
@@ -410,7 +410,7 @@ def download_prompt(data):
 
 def process_video_with_speed_adjustments(video_url, adjustments, audio_filename, output_filename):
     # Check if /tmp directory exists, if not, create it
-    tmp_directory = "/tmp"
+    tmp_directory = "./"
     if not os.path.exists(tmp_directory):
         print(f"{tmp_directory} does not exist. Creating it...")
         os.makedirs(tmp_directory)
@@ -443,7 +443,7 @@ def process_video_with_speed_adjustments(video_url, adjustments, audio_filename,
 
 def adjust_video_speed(input_video, adjustments, output_video):
     print("Adjusting video speed")
-    files = os.listdir("/tmp")
+    files = os.listdir("./")
     print("Files in /tmp directory in adjust speed:")
     for file in files:
         print(file)

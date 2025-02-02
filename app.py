@@ -1249,7 +1249,7 @@ def get_video(filename):
         else:
             raise Exception(f"Failed to download video: {response.status_code}")
         
-    tmp_directory = "/tmp"
+    tmp_directory = "./"
     if not os.path.exists(tmp_directory):
         print(f"{tmp_directory} does not exist. Creating it...")
         os.makedirs(tmp_directory)
@@ -1277,7 +1277,7 @@ def get_video(filename):
         video_url,
         adjustments,
         filename,
-        f"/tmp/{filename}_output_combined.mp4"
+        f"./{filename}_output_combined.mp4"
     )
     print("Stitch audio job id: ", job.get_id())
     # Enqueue the job at the top of the queue
@@ -1289,7 +1289,7 @@ def get_video(filename):
 @app.route('/download/<filename>', methods=["POST"])
 def download_file(filename):
     print("DOWNLOAD NAME: " + filename)
-    file_path = f"/tmp/{filename}"
+    file_path = f"./{filename}"
     if not os.path.exists(file_path):
         return jsonify({"error": "File not found"}), 404
     return send_file(file_path, as_attachment=True, download_name=filename)
