@@ -427,7 +427,7 @@ def process_video_with_speed_adjustments(video_url, adjustments, audio_filename,
 
     # Step 2: Adjust the playback speed of intervals
     adjusted_video_file = os.path.join(tmp_directory, f"{audio_filename}_adjusted_video.mp4")
-    adjust_video_speed(video_file, adjustments, adjusted_video_file)
+    adjust_video_speed(video_url, adjustments, adjusted_video_file)
 
     # Step 3: Combine the adjusted video with the audio
     combine_audio_video(audio_filename, adjusted_video_file, output_filename)
