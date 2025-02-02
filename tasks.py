@@ -420,6 +420,10 @@ def process_video_with_speed_adjustments(video_url, adjustments, audio_filename,
     # Step 1: Download the video
     video_file = os.path.join(tmp_directory, f"{audio_filename}_downloaded_video.mp4")
     # download_video(video_url, video_file)
+    files = os.listdir(tmp_directory)
+    print("Files in /tmp directory:")
+    for file in files:
+        print(file)
 
     # Step 2: Adjust the playback speed of intervals
     adjusted_video_file = os.path.join(tmp_directory, f"{audio_filename}_adjusted_video.mp4")
@@ -439,6 +443,11 @@ def process_video_with_speed_adjustments(video_url, adjustments, audio_filename,
 
 def adjust_video_speed(input_video, adjustments, output_video):
     print("Adjusting video speed")
+    files = os.listdir("/tmp")
+    print("Files in /tmp directory in adjust speed:")
+    for file in files:
+        print(file)
+
     clips = []
 
     try:
