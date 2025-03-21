@@ -447,7 +447,11 @@ def calculate_frames(scene_change_times, time_intervals, motion_data, total_song
         duration = (end_time - start_time) * frame_rate
         adjusted_duration = round(duration * speed_multiplier['normal'])
         end_frame = current_frame + adjusted_duration
-        speed_factor = duration / adjusted_duration
+        # speed_factor = duration / adjusted_duration
+        try:
+            speed_factor = duration / adjusted_duration
+        except:
+            speed_factor = 1
         adjustments.append({
             "start_frame": current_frame,
             "end_frame": end_frame,

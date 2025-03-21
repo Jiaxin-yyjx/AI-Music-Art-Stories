@@ -9,7 +9,8 @@ from flask import Flask, jsonify, request, render_template, session, send_file, 
 import replicate
 from dotenv import load_dotenv
 import requests
-from tasks import long_running_task, process_audio, generate_image_task, download_prompt, process_video_with_speed_adjustments
+from tasks import long_running_task, process_audio, generate_image_task, download_prompt
+# from tasks import process_video_with_speed_adjustments
 from queue_config import queue, high_priority_queue, redis_conn
 from flask_cors import CORS
 from datetime import datetime
@@ -1102,203 +1103,9 @@ def check_job_status(job_id):
         return jsonify({"job_id": job_id, "status": status}), 200
 
 
-    # def combine_audio_video(audio_filename, video_url, output_filename="./downloaded_videos/output_combined.mp4"):
-    #     try:
-    #         audio_path = f"./{audio_filename}"  # Adjust path based on where you save files
-    #         audio_clip = AudioFileClip(audio_path)
-    #         video_clip = VideoFileClip(video_url)
-
-    #         # Combine audio and video
-    #         final_clip = video_clip.set_audio(audio_clip)
-
-    #         # Save the final output
-    #         final_clip.write_videofile(output_filename, codec="libx264", audio_codec="aac")
-    #         print(f"Combined video saved to {output_filename}")
-            
-
-    #     except Exception as e:
-    #         print(f"Error during processing: {e}")
-    #     finally:
-    #         # Properly close MoviePy resources
-    #         if 'audio_clip' in locals():
-    #             audio_clip.close()
-    #         if 'video_clip' in locals():
-    #             video_clip.close()
-    #         if 'final_clip' in locals():
-    #             final_clip.close()
-
-    # @app.route('/get_video/<filename>', methods=["GET"])
-    # def get_video(filename):
-    #     print("Downloading video?")
-        
-    #     # Get the video_url from the query parameters
-    #     video_url = request.args.get('video_url')  # This retrieves the 'video_url' parameter
-    #     if not video_url:
-    #         return jsonify({"error": "video_url parameter is missing."}), 400
-
-    #     # Assuming the filename is valid, prepare the output filename
-    #     output_filename = "./downloaded_videos/output_combined.mp4"
-        
-    #     # Call the function to combine audio and video
-    #     try:
-    #         combine_audio_video(filename, video_url, output_filename)
-    #     except Exception as e:
-    #         return jsonify({"error": str(e)}), 500
-        
-    #     # Return the combined video file
-    #     return send_file(output_filename, as_attachment=True, download_name="output_combined.mp4")
-
-    # def combine_audio_video(audio_filename, video_url, output_filename="./downloaded_videos/output_combined.mp4"):
-    #     try:
-    #         # Assuming you are downloading the video from the URL and combining it with the audio file
-    #         # Download the video file from `video_url`
-    #         # Then use MoviePy or any other method to combine video and audio
-
-    #         audio_path = f"./{audio_filename}"  # Adjust path based on where you save audio files
-    #         video_clip = VideoFileClip(video_url)  # Assuming video_url is directly usable
-            
-    #         # Process video and audio combining (not full code for brevity)
-    #         # Example with MoviePy:
-    #         audio_clip = AudioFileClip(audio_path)
-    #         final_clip = video_clip.set_audio(audio_clip)
-
-    #         final_clip.write_videofile(output_filename, codec="libx264", audio_codec="aac")
-    #         print(f"Combined video saved to {output_filename}")
-
-    #     except Exception as e:
-    #         print(f"Error during processing: {e}")
-    #         raise e  # Re-raise error so it can be handled in the route
-    #     finally:
-    #         # Ensure all resources are properly closed
-    #         if 'audio_clip' in locals():
-    #             audio_clip.close()
-    #         if 'video_clip' in locals():
-    #             video_clip.close()
-    #         if 'final_clip' in locals():
-    #             final_clip.close()
-
-# @app.route('/get_video/<filename>', methods=["POST"])  # Change method to POST
-# def get_video(filename):
-#     print("Downloading video?")
-    
-#     # Get the video_url from the JSON body
-#     data = request.get_json()  # Parse JSON body
-#     video_url = data.get('video_url')  # Extract video_url from the JSON
-#     if not video_url:
-#         return jsonify({"error": "video_url parameter is missing."}), 400
-
-#     # Prepare the output filename
-#     output_filename = "./downloaded_videos/output_combined.mp4"
-    
-#     # Call the function to combine audio and video
-#     try:
-#         combine_audio_video(filename, video_url, output_filename)
-#     except Exception as e:
-#         return jsonify({"error": str(e)}), 500
-    
-#     # Return the combined video file as an attachment
-#     return send_file(output_filename, as_attachment=True, download_name="output_combined.mp4")
-
-
-# def combine_audio_video(audio_filename, video_url, output_filename="./downloaded_videos/output_combined.mp4"):
-#     try:
-#         # Process video and audio combining using MoviePy
-#         audio_path = f"./{audio_filename}"  # Adjust path based on where you save audio files
-#         video_clip = VideoFileClip(video_url)  # Assuming video_url is directly usable
-        
-#         # Combine audio and video
-#         audio_clip = AudioFileClip(audio_path)
-#         final_clip = video_clip.set_audio(audio_clip)
-
-#         final_clip.write_videofile(output_filename, codec="libx264", audio_codec="aac")
-#         print(f"Combined video saved to {output_filename}")
-
-#     except Exception as e:
-#         print(f"Error during processing: {e}")
-#         raise e  # Re-raise error so it can be handled in the route
-#     finally:
-#         # Ensure all resources are properly closed
-#         if 'audio_clip' in locals():
-#             audio_clip.close()
-#         if 'video_clip' in locals():
-#             video_clip.close()
-#         if 'final_clip' in locals():
-#             final_clip.close()
-
-@app.route('/get_video/<filename>', methods=["POST"])
-def get_video(filename):
-    # Parse input data
-    data = request.get_json()
-    video_url = data.get('video_url')
-    adjustments = data.get('adjustments')
-
-    if not video_url:
-        return jsonify({"error": "video_url parameter is missing."}), 400
-
-    if not adjustments:
-        return jsonify({"error": "adjustments parameter is missing."}), 400
-    
-    def download_video(api_url, save_path):
-        print("Downloading video...")
-        response = requests.get(api_url, stream=True, verify=False)
-        print(f"Response code: {response.status_code}")
-        if response.status_code == 200:
-            with open(save_path, "wb") as f:
-                for chunk in response.iter_content(chunk_size=4096):
-                    f.write(chunk)
-        else:
-            raise Exception(f"Failed to download video: {response.status_code}")
-        
-    tmp_directory = "./"
-    if not os.path.exists(tmp_directory):
-        print(f"{tmp_directory} does not exist. Creating it...")
-        os.makedirs(tmp_directory)
-    else:
-        print(f"{tmp_directory} exists.")
-    
-    video_file = os.path.join(tmp_directory, f"{filename}_downloaded_video.mp4")
-    download_video(video_url, video_file)
-
-    # Enqueue the video processing task
-    # job = queue.enqueue(
-    #     process_video_with_speed_adjustments,
-    #     video_url,
-    #     adjustments,
-    #     filename,
-    #     f"/tmp/{filename}_output_combined.mp4"
-    # )
-    # job = Job.create(
-    #     process_video_with_speed_adjustments,
-    #     args=(video_url, adjustments, filename, f"/tmp/{filename}_output_combined.mp4"),
-    #     connection=redis_conn
-    # )
-    job = high_priority_queue.enqueue(
-        process_video_with_speed_adjustments,
-        video_url,
-        adjustments,
-        filename,
-        f"./{filename}_output_combined.mp4"
-    )
-    print("Stitch audio job id: ", job.get_id())
-    # Enqueue the job at the top of the queue
-    # queue.enqueue_job(job, at_front=True)
-
-    # Return the job ID to the client
-    return jsonify({"job_id": job.get_id()}), 202
-
-@app.route('/download/<filename>', methods=["POST"])
-def download_file(filename):
-    print("DOWNLOAD NAME: " + filename)
-    file_path = f"./{filename}"
-    if not os.path.exists(file_path):
-        return jsonify({"error": "File not found"}), 404
-    return send_file(file_path, as_attachment=True, download_name=filename)
-
 # @app.route('/get_video/<filename>', methods=["POST"])
 # def get_video(filename):
-#     print("Downloading video...")
-
-#     # Get the video_url and adjustments from the JSON body
+#     # Parse input data
 #     data = request.get_json()
 #     video_url = data.get('video_url')
 #     adjustments = data.get('adjustments')
@@ -1308,127 +1115,188 @@ def download_file(filename):
 
 #     if not adjustments:
 #         return jsonify({"error": "adjustments parameter is missing."}), 400
-
-#     # Prepare the output filename in Heroku's temporary directory
-#     output_filename = f"/tmp/{filename}_output_combined.mp4"
-
-#     try:
-#         process_video_with_speed_adjustments(video_url, adjustments, filename, output_filename)
-#     except Exception as e:
-#         return jsonify({"error": str(e)}), 500
-
-#     # Return the combined video file as an attachment
-#     return send_file(output_filename, as_attachment=True, download_name=f"{filename}_output_combined.mp4")
-
-
-# def process_video_with_speed_adjustments(video_url, adjustments, audio_filename, output_filename):
-#     # Check if /tmp directory exists, if not, create it
+    
+#     def download_video(api_url, save_path):
+#         print("Downloading video...")
+#         response = requests.get(api_url, stream=True, verify=False)
+#         print(f"Response code: {response.status_code}")
+#         if response.status_code == 200:
+#             with open(save_path, "wb") as f:
+#                 for chunk in response.iter_content(chunk_size=4096):
+#                     f.write(chunk)
+#         else:
+#             raise Exception(f"Failed to download video: {response.status_code}")
+        
 #     tmp_directory = "/tmp"
 #     if not os.path.exists(tmp_directory):
 #         print(f"{tmp_directory} does not exist. Creating it...")
 #         os.makedirs(tmp_directory)
 #     else:
 #         print(f"{tmp_directory} exists.")
-
-#     # Step 1: Download the video
-#     video_file = os.path.join(tmp_directory, "downloaded_video.mp4")
+    
+#     video_file = os.path.join(tmp_directory, f"{filename}_downloaded_video.mp4")
 #     download_video(video_url, video_file)
 
-#     # Step 2: Adjust the playback speed of intervals
-#     adjusted_video_file = os.path.join(tmp_directory, "adjusted_video.mp4")
-#     adjust_video_speed(video_file, adjustments, adjusted_video_file)
+#     job = high_priority_queue.enqueue(
+#         process_video_with_speed_adjustments,
+#         video_url,
+#         adjustments,
+#         filename,
+#         f"/tmp/{filename}_output_combined.mp4"
+#     )
+#     print("Stitch audio job id: ", job.get_id())
+#     # Enqueue the job at the top of the queue
+#     # queue.enqueue_job(job, at_front=True)
 
-#     # Step 3: Combine the adjusted video with the audio
-#     combine_audio_video(audio_filename, adjusted_video_file, output_filename)
+#     # Return the job ID to the client
+#     return jsonify({"job_id": job.get_id()}), 202
 
-#     # Cleanup temporary files
-#     if os.path.exists(video_file):
-#         os.remove(video_file)
-#     if os.path.exists(adjusted_video_file):
-#         os.remove(adjusted_video_file)
+# @app.route('/download/<filename>', methods=["POST"])
+# def download_file(filename):
+#     print("DOWNLOAD NAME: " + filename)
+#     file_path = f"/tmp/{filename}"
+#     if not os.path.exists(file_path):
+#         return jsonify({"error": "File not found"}), 404
+#     return send_file(file_path, as_attachment=True, download_name=filename)
+
+@app.route('/get_video/<filename>', methods=["POST"])
+def get_video(filename):
+    print("Downloading video...")
+
+    # Get the video_url and adjustments from the JSON body
+    data = request.get_json()
+    video_url = data.get('video_url')
+    adjustments = data.get('adjustments')
+
+    if not video_url:
+        return jsonify({"error": "video_url parameter is missing."}), 400
+
+    if not adjustments:
+        return jsonify({"error": "adjustments parameter is missing."}), 400
+
+    # Prepare the output filename in Heroku's temporary directory
+    output_filename = f"/tmp/{filename}_output_combined.mp4"
+
+    try:
+        process_video_with_speed_adjustments(video_url, adjustments, filename, output_filename)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    # Return the combined video file as an attachment
+    return send_file(output_filename, as_attachment=True, download_name=f"{filename}_output_combined.mp4")
 
 
-# def download_video(api_url, save_path):
-#     print("Downloading video...")
-#     response = requests.get(api_url, stream=True, verify=False)
-#     print(f"Response code: {response.status_code}")
-#     if response.status_code == 200:
-#         with open(save_path, "wb") as f:
-#             for chunk in response.iter_content(chunk_size=4096):
-#                 f.write(chunk)
-#     else:
-#         raise Exception(f"Failed to download video: {response.status_code}")
+def process_video_with_speed_adjustments(video_url, adjustments, audio_filename, output_filename):
+    # Check if /tmp directory exists, if not, create it
+    tmp_directory = "/tmp"
+    if not os.path.exists(tmp_directory):
+        print(f"{tmp_directory} does not exist. Creating it...")
+        os.makedirs(tmp_directory)
+    else:
+        print(f"{tmp_directory} exists.")
+
+    # Step 1: Download the video
+    adjusted_video_file = os.path.join(tmp_directory, "downloaded_video.mp4")
+    download_video(video_url, adjusted_video_file)
+    # video_file = os.path.join(tmp_directory, "downloaded_video.mp4")
+    # download_video(video_url, video_file)
+    
+
+    # Step 2: Adjust the playback speed of intervals
+    # adjusted_video_file = os.path.join(tmp_directory, "adjusted_video.mp4")
+    # adjust_video_speed(video_file, adjustments, adjusted_video_file)
+
+    # Step 3: Combine the adjusted video with the audio
+    combine_audio_video(audio_filename, adjusted_video_file, output_filename)
+
+    # Cleanup temporary files
+    # if os.path.exists(video_file):
+    #     os.remove(video_file)
+    if os.path.exists(adjusted_video_file):
+        os.remove(adjusted_video_file)
 
 
-# def adjust_video_speed(input_video, adjustments, output_video):
-#     print("Adjusting video speed")
-#     segments = []
-#     for i, adj in enumerate(adjustments):
-#         start_frame = adj["start_frame"]
-#         end_frame = adj["end_frame"]
-#         speed_factor = adj["speed_factor"]
+def download_video(api_url, save_path):
+    print("Downloading video...")
+    response = requests.get(api_url, stream=True, verify=False)
+    print(f"Response code: {response.status_code}")
+    if response.status_code == 200:
+        with open(save_path, "wb") as f:
+            for chunk in response.iter_content(chunk_size=4096):
+                f.write(chunk)
+    else:
+        raise Exception(f"Failed to download video: {response.status_code}")
 
-#         # Calculate start and end times
-#         start_time = start_frame / 15  # Assuming 15 fps
-#         end_time = end_frame / 15
 
-#         # Extract segment
-#         segment_file = os.path.join("/tmp", f"segment_{i}.mp4")
-#         subprocess.run([
-#             "ffmpeg", "-i", input_video,
-#             "-vf", f"select='between(n,{start_frame},{end_frame})'",
-#             "-vsync", "vfr",
-#             "-c:v", "libx264",
-#             segment_file
-#         ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+def adjust_video_speed(input_video, adjustments, output_video):
+    print("Adjusting video speed")
+    segments = []
+    for i, adj in enumerate(adjustments):
+        start_frame = adj["start_frame"]
+        end_frame = adj["end_frame"]
+        speed_factor = adj["speed_factor"]
 
-#         # Adjust playback speed
-#         adjusted_segment = os.path.join("/tmp", f"adjusted_segment_{i}.mp4")
-#         subprocess.run([
-#             "ffmpeg", "-i", segment_file,
-#             "-filter:v", f"setpts=PTS/{speed_factor}",
-#             "-filter:a", f"atempo={min(speed_factor, 2.0)}",  # atempo must be between 0.5 and 2.0, limit accordingly
-#             adjusted_segment
-#         ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-#         segments.append(adjusted_segment)
+        # Calculate start and end times
+        start_time = start_frame / 15  # Assuming 15 fps
+        end_time = end_frame / 15
 
-#     # Merge all segments
-#     file_list_path = os.path.join("/tmp", "file_list.txt")
-#     with open(file_list_path, "w") as f:
-#         for segment in segments:
-#             f.write(f"file '{segment}'\n")
-#     subprocess.run([
-#         "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", file_list_path, "-c", "copy", output_video
-#     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Extract segment
+        segment_file = os.path.join("/tmp", f"segment_{i}.mp4")
+        subprocess.run([
+            "ffmpeg", "-i", input_video,
+            "-vf", f"select='between(n,{start_frame},{end_frame})'",
+            "-vsync", "vfr",
+            "-c:v", "libx264",
+            segment_file
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-#     # Cleanup temporary files
-#     for segment in segments + [os.path.join("/tmp", f"segment_{i}.mp4") for i in range(len(adjustments))]:
-#         if os.path.exists(segment):
-#             os.remove(segment)
-#     if os.path.exists(file_list_path):
-#         os.remove(file_list_path)
+        # Adjust playback speed
+        adjusted_segment = os.path.join("/tmp", f"adjusted_segment_{i}.mp4")
+        subprocess.run([
+            "ffmpeg", "-i", segment_file,
+            "-filter:v", f"setpts=PTS/{speed_factor}",
+            "-filter:a", f"atempo={min(speed_factor, 2.0)}",  # atempo must be between 0.5 and 2.0, limit accordingly
+            adjusted_segment
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        segments.append(adjusted_segment)
 
-# def combine_audio_video(audio_filename, video_file, output_filename):
-#     try:
-#         audio_path = audio_filename
-#         video_clip = VideoFileClip(video_file)
-#         audio_clip = AudioFileClip(audio_path)
+    # Merge all segments
+    file_list_path = os.path.join("/tmp", "file_list.txt")
+    with open(file_list_path, "w") as f:
+        for segment in segments:
+            f.write(f"file '{segment}'\n")
+    subprocess.run([
+        "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", file_list_path, "-c", "copy", output_video
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-#         final_clip = video_clip.set_audio(audio_clip)
-#         final_clip.write_videofile(output_filename, codec="libx264", audio_codec="aac")
-#         print(f"Combined video saved to {output_filename}")
+    # Cleanup temporary files
+    for segment in segments + [os.path.join("/tmp", f"segment_{i}.mp4") for i in range(len(adjustments))]:
+        if os.path.exists(segment):
+            os.remove(segment)
+    if os.path.exists(file_list_path):
+        os.remove(file_list_path)
 
-#     except Exception as e:
-#         print(f"Error during processing: {e}")
-#         raise e
-#     finally:
-#         # Ensure all resources are properly closed
-#         if 'audio_clip' in locals():
-#             audio_clip.close()
-#         if 'video_clip' in locals():
-#             video_clip.close()
-#         if 'final_clip' in locals():
-#             final_clip.close()
+def combine_audio_video(audio_filename, video_file, output_filename):
+    try:
+        audio_path = audio_filename
+        video_clip = VideoFileClip(video_file)
+        audio_clip = AudioFileClip(audio_path)
+
+        final_clip = video_clip.set_audio(audio_clip)
+        final_clip.write_videofile(output_filename, codec="libx264", audio_codec="aac")
+        print(f"Combined video saved to {output_filename}")
+
+    except Exception as e:
+        print(f"Error during processing: {e}")
+        raise e
+    finally:
+        # Ensure all resources are properly closed
+        if 'audio_clip' in locals():
+            audio_clip.close()
+        if 'video_clip' in locals():
+            video_clip.close()
+        if 'final_clip' in locals():
+            final_clip.close()
 
 
 @app.route("/process-data", methods=["POST"])
